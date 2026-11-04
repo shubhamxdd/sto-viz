@@ -11,9 +11,9 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
-| 1 | Stack and architecture | Foundation | in-progress |
-| 2 | Coding standards and tooling | Foundation | planned |
-| 3 | Data model | Foundation | planned |
+| 1 | Stack and architecture | Foundation | done |
+| 2 | Coding standards and tooling | Foundation | done |
+| 3 | Data model | Foundation | in-progress |
 | 4 | Design system and 3D canvas | Foundation | planned |
 | 5 | Manual portfolio entry | Release 1 | planned |
 | 6 | Procedural 3D city visualizer | Release 1 | planned |
@@ -30,7 +30,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 
 ## Foundations
 
-### 1. Stack and architecture · in-progress
+### 1. Stack and architecture · done
 Decide the web application stack, 3D rendering setup, backend service, and database, then scaffold a runnable project so every later slice builds on real structure.
 **Done when:** the stack choices are recorded in a spec, and the scaffolded project runs locally and passes build checks.
 - [x] Decide the stack (spec): `/architect stack and architecture`
@@ -38,15 +38,23 @@ Decide the web application stack, 3D rendering setup, backend service, and datab
 - [x] Smoke check it runs: `/test`
 Spec [0001](../specs/0001-stack-and-architecture/index.md) · code in src/
 
-### 2. Coding standards and tooling
+### 2. Coding standards and tooling · done
 Capture conventions, then install lint, format, and pre-commit enforcement from the real scaffolded project.
 **Done when:** root AGENTS.md reflects the real stack, and lint and format checks run clean.
 - [x] Capture conventions and tooling choices: `/audit`
 
-### 3. Data model · needs a decision
+### 3. Data model · in-progress
 Core entities every feature builds on: stocks, holdings, daily prices, user accounts, and share links.
 **Done when:** schemas, relationships, and validation rules support browser storage and cloud persistence without breaking migrations.
-- [ ] Design it (spec): `/architect data model`
+- [x] Design it (spec): `/architect data model`
+- [ ] Build it: `/develop data model`
+  - [ ] Domain entities and mathematical valuation services (AC-2, AC-3, AC-5)
+  - [ ] Relational Drizzle schema with foreign keys and check constraints (AC-1, AC-4, AC-6)
+  - [ ] Database migration and initial security seed script (AC-1, AC-6)
+  - [ ] Guest storage synchronization and share link projection filter (AC-7, AC-8)
+- [ ] Verify it: `/check verify data model`
+- [ ] Test it: `/test data model`
+Spec [0002](../specs/0002-data-model.md)
 
 ### 4. Design system and 3D canvas · needs a decision
 Visual theme, dark palette, typography, responsive 3D viewport canvas, camera controls, and quality level switches.
