@@ -27,7 +27,7 @@ erDiagram
         uuid security_id FK
         varchar exchange "NSE or BSE"
         varchar symbol "Ticker symbol"
-        boolean is_primary "NSE preferred"
+        boolean is_primary "At most one primary per security"
         boolean is_active
         timestamptz created_at
     }
@@ -40,7 +40,7 @@ erDiagram
         numeric previous_close
         numeric change_percent
         bigint volume
-        varchar source "NSE_BHAVCOPY"
+        varchar source "NSE_BHAVCOPY or BSE_BHAVCOPY"
     }
 
     USERS {
@@ -65,7 +65,7 @@ erDiagram
         uuid portfolio_id FK
         uuid security_id FK
         integer quantity "Whole shares > 0"
-        numeric total_cost "Exact invested rupees > 0"
+        numeric total_cost "Cumulative invested rupees > 0"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -73,10 +73,11 @@ erDiagram
     SHARE_LINKS {
         uuid id PK
         uuid portfolio_id FK
-        varchar token UK "256 bit random token"
+        varchar token UK "64 hex char token"
         varchar mode "live or snapshot"
         jsonb snapshot_payload "Sanitized public DTO"
-        boolean show_rupee_totals
+        timestamptz snapshot_as_of "Snapshot timestamp"
+        boolean show_rupee_totals "Optional portfolio sum"
         boolean is_active
         timestamptz revoked_at
         timestamptz created_at
@@ -99,7 +100,7 @@ flowchart TD
     HasCloudData -- No --> DirectMigration["Create default portfolio and copy browser holdings to database"]
     HasCloudData -- Yes --> PromptConflict["Prompt user: Merge or Replace cloud portfolio?"]
     PromptConflict -- Merge --> MergeHoldings["Merge holdings: combine quantities and sum cumulative costs"]
-    PromptConflict -- Replace --> ReplaceHoldings["Archive cloud holdings and save incoming browser holdings"]
+    PromptConflict -- Replace --> ReplaceHoldings["Transactional replacement: replace cloud holdings with incoming browser holdings"]
     DirectMigration --> SyncDone["Clear browser storage and switch to cloud sync"]
     MergeHoldings --> SyncDone
     ReplaceHoldings --> SyncDone
@@ -129,7 +130,7 @@ flowchart LR
         DTO --> SSector["Sector Architectural Style"]
         DTO --> SPct["Position Gain: +10 percent"]
         DTO --> STotal["Optional Total Portfolio Sum (if opted in)"]
-        DTO -.-> Blocked["Never sent: quantity or individual rupee amounts"]
+        DTO -.-> Blocked["Never sent: quantity, total cost, or individual rupee amounts"]
     end
 
     PrivateDatabase --> SecurityBoundary

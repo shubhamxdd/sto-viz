@@ -11,13 +11,13 @@ This document establishes the canonical data model, domain entities, and persist
 
 FolioCity visualizes Indian stock portfolios as a cyberpunk 3D cityscape where each building represents one company holding. To create a dependable visualization without paper trading or live streaming noise, the system requires a clean foundational data model that unifies several distinct operational concerns.
 
-First, Indian equities trade across two major exchanges, the National Stock Exchange (NSE) and the Bombay Stock Exchange (BSE). A single company shares one unique International Securities Identification Number (ISIN) across both exchanges while carrying different ticker symbols. The data model decouples canonical securities from exchange listings, selecting NSE closing prices as the primary valuation benchmark while supporting BSE ticker lookup.
+First, Indian equities trade across two major exchanges, the National Stock Exchange (NSE) and the Bombay Stock Exchange (BSE). A single company shares one unique International Securities Identification Number (ISIN) across both exchanges while carrying different ticker symbols. The data model decouples canonical securities from exchange listings, selecting the primary NSE listing as the authoritative valuation benchmark while indexing BSE tickers for seamless search.
 
-Second, the product starts with zero friction. First time visitors enter up to three stocks stored solely in browser local storage. When adding a fourth stock, the application prompts them to sign in, which synchronizes their holdings to cloud storage in PostgreSQL. If the cloud account already holds stock records from another device, the system handles the conflict gracefully by letting the user choose between merging holdings with weighted average buy prices or replacing them.
+Second, the product starts with zero friction. First time visitors enter up to three stocks stored solely in browser local storage. When adding a fourth stock, the application prompts them to sign in, which synchronizes their holdings to cloud storage in PostgreSQL. If the cloud account already holds stock records from another device, the system handles the conflict gracefully by letting the user choose between merging holdings with weighted average buy prices or transactionally replacing them.
 
-Third, unlisted share links allow users to showcase their cyberpunk skyline publicly without compromising privacy. The data model supports both live links reflecting current holdings and frozen snapshot links capturing a historical moment. Individual building cards strictly hide share quantities, buy prices, and individual stock rupee amounts, preventing viewers from calculating private quantities from public closing prices.
+Third, unlisted share links allow users to showcase their cyberpunk skyline publicly without compromising financial privacy. The privacy boundary guarantees that share quantities, invested amounts, and individual stock rupee valuations are never projected over the public network. Public viewers see building neon glow colors, percentage moves, and sector styles, which conceals net worth and share counts. When the owner opts in to show total rupee amounts, only the aggregate portfolio total is exposed.
 
-Finally, equity valuation calculations must remain deterministic and avoid floating point inaccuracies or accumulated drift. Rather than repeatedly rounding unit buy prices, holdings store total invested cost alongside share quantity, computing weighted average buy prices on demand. All money fields use exact decimal storage, ensuring calculations remain exact across multiple buy transactions.
+Finally, equity valuation calculations must remain deterministic and avoid floating point inaccuracies or accumulated drift. Rather than repeatedly rounding unit buy prices, holdings store total invested cost alongside share quantity, computing weighted average buy prices on demand. In domain logic, exact arithmetic handles money values, converting to JavaScript numbers only when setting Three.js building geometry heights and shader parameters.
 
 ## Requirements
 
@@ -29,14 +29,14 @@ Finally, equity valuation calculations must remain deterministic and avoid float
 - As a signed in user, I want to create an unlisted share link to my city so that I can share my visual achievements with friends while keeping my sensitive share quantities private.
 
 **Acceptance criteria**:
-- **AC-1**: Securities store unique 12 character ISINs, official company names, and sector classifications. Exchange listings link securities to exchange specific tickers for NSE and BSE, enforcing uniqueness on ISIN and compound uniqueness on exchange plus ticker.
-- **AC-2**: Holdings store positive integer share quantities and cumulative invested cost with 2 decimal places, enforcing positive check constraints at database and entity layers.
-- **AC-3**: Duplicate entries of the same stock merge automatically by summing quantities and invested costs, calculating weighted average buy price on demand without compounding rounding drift.
+- **AC-1**: Securities store 12 character uppercase ISINs, official company names, and sector classifications. Listings link securities to NSE and BSE tickers with a partial unique index guaranteeing exactly one primary listing per security.
+- **AC-2**: Holdings store positive integer share quantities and cumulative invested cost with 2 decimal places, enforcing check constraints at database and entity layers.
+- **AC-3**: Duplicate entries of the same stock merge automatically within an atomic transaction by summing quantities and invested costs, calculating weighted average buy price on demand without compounding rounding drift.
 - **AC-4**: Daily closing prices record historical exchange closing prices indexed by listing ID and date, preventing duplicate daily records through compound unique constraints.
 - **AC-5**: Portfolio valuation formulas compute invested capital, current market value, profit or loss in rupees, and profit or loss percentage using exact decimal math without floating point drift. Building height scales using a capped logarithmic curve.
 - **AC-6**: Portfolios associate directly with Better Auth user accounts while maintaining isolated holdings and enforcing a single default portfolio per user via partial unique indexing.
-- **AC-7**: Account synchronization handles conflicts between browser local storage and cloud records using stable ISIN identifiers, prompting the user to either merge holdings or overwrite cloud records.
-- **AC-8**: Unlisted share links use cryptographically random 256 bit tokens, support live or frozen snapshot modes, and project sanitized public payloads that omit share quantities, buy prices, and individual stock market values.
+- **AC-7**: Account synchronization handles conflicts between browser local storage and cloud records using stable ISIN identifiers, prompting the user to either merge holdings or transactionally replace cloud holdings.
+- **AC-8**: Unlisted share links use cryptographically random 256 bit tokens, support live or frozen snapshot modes with explicit cross column validity checks, and project public payloads that omit share quantities, buy prices, and individual stock market values.
 
 ## Options considered
 
@@ -47,7 +47,7 @@ A relational schema modeled in Drizzle ORM separating canonical securities (by I
 **Pros**:
 - Full relational integrity: supports companies trading on both NSE and BSE under different symbols without duplicating underlying holdings
 - Zero rounding drift: storing cumulative invested cost preserves exact mathematical precision across unlimited purchase merges
-- Privacy safety: share links project an allow listed public data transfer object, making quantity leakage mathematically impossible
+- Privacy safety: share links project an allow listed public data transfer object, keeping private share counts concealed
 - Clean Architecture boundaries: plain TypeScript domain entities run identically in browser local storage and server runtimes
 
 **Cons**:
@@ -93,7 +93,7 @@ Separating `securities` (identified by ISIN) from `listings` (exchange tickers) 
 
 Storing `total_cost` (quantity multiplied by buy price) in holdings rather than a rounded unit price eliminates compounding drift. The average buy price is computed dynamically as `total_cost / quantity`, preserving financial precision across repeated merges.
 
-For public sharing, the specification prohibits individual holding rupee amounts from public payloads. Viewers see company name, sector style, and percentage move, but never the rupee valuation. Because individual rupee values are never sent across the wire, viewers cannot divide market value by closing price to derive private share counts.
+For public sharing, individual holding rupee values and share counts are completely excluded from public endpoints. Viewers see company name, sector style, and percentage move, which powers the visual 3D building height and neon glow without exposing personal wealth.
 
 ## Feature design
 
@@ -102,9 +102,9 @@ For public sharing, the specification prohibits individual holding rupee amounts
 #### 1. `securities`
 Canonical company identity across exchanges.
 - `id`: `uuid`, primary key, default `gen_random_uuid()`
-- `isin`: `varchar(12)`, not null, unique index (e.g. 'INE002A01018')
+- `isin`: `varchar(12)`, not null, check `(length(isin) = 12)`
 - `company_name`: `varchar(255)`, not null
-- `sector`: `varchar(50)`, not null, default 'Other'
+- `sector`: `varchar(50)`, not null, default 'Other', check `(sector in ('IT and Technology', 'Banks and Financial Services', 'Oil, Gas and Energy', 'Pharma and Healthcare', 'Automobiles and Manufacturing', 'FMCG and Consumer Goods', 'Metals and Mining', 'Real Estate and Infrastructure', 'Telecom and Media', 'Other'))`
 - `created_at`: `timestamptz`, not null, default `now()`
 - `updated_at`: `timestamptz`, not null, default `now()`
 - Indexes: `unique(isin)`, `index(sector)`
@@ -115,11 +115,11 @@ Exchange specific trading ticker symbol.
 - `security_id`: `uuid`, not null, references `securities(id)` on delete cascade
 - `exchange`: `varchar(10)`, not null, default 'NSE', check `(exchange in ('NSE', 'BSE'))`
 - `symbol`: `varchar(30)`, not null (e.g. 'RELIANCE')
-- `is_primary`: `boolean`, not null, default true
+- `is_primary`: `boolean`, not null, default false
 - `is_active`: `boolean`, not null, default true
 - `created_at`: `timestamptz`, not null, default `now()`
 - `updated_at`: `timestamptz`, not null, default `now()`
-- Indexes: `unique(exchange, symbol)`, `index(symbol)`, `index(security_id)`
+- Indexes: `unique(exchange, symbol)`, `index(symbol)`, `index(security_id)`, `unique(security_id) where is_primary = true`
 
 #### 3. `daily_prices`
 Daily closing prices ingested from official exchange Bhavcopy files.
@@ -130,7 +130,7 @@ Daily closing prices ingested from official exchange Bhavcopy files.
 - `previous_close`: `numeric(12, 2)`, not null, check `(previous_close > 0)`
 - `change_percent`: `numeric(8, 4)`, not null
 - `volume`: `bigint`
-- `source`: `varchar(30)`, not null, default 'NSE_BHAVCOPY'
+- `source`: `varchar(30)`, not null, default 'NSE_BHAVCOPY', check `(source in ('NSE_BHAVCOPY', 'BSE_BHAVCOPY'))`
 - `created_at`: `timestamptz`, not null, default `now()`
 - Indexes: `unique(listing_id, price_date)`, `index(price_date)`
 
@@ -160,13 +160,15 @@ Stock holding within a portfolio.
 Unlisted share links with public projection.
 - `id`: `uuid`, primary key, default `gen_random_uuid()`
 - `portfolio_id`: `uuid`, not null, references `portfolios(id)` on delete cascade
-- `token`: `varchar(64)`, not null, unique index
+- `token`: `varchar(64)`, not null, unique index, check `(length(token) = 64)`
 - `mode`: `varchar(20)`, not null, default 'live', check `(mode in ('live', 'snapshot'))`
-- `snapshot_payload`: `jsonb` (sanitized public DTO containing building models and total %, never quantities or costs)
+- `snapshot_payload`: `jsonb`
+- `snapshot_as_of`: `timestamptz`
 - `show_rupee_totals`: `boolean`, not null, default false
 - `is_active`: `boolean`, not null, default true
 - `revoked_at`: `timestamptz`
 - `created_at`: `timestamptz`, not null, default `now()`
+- Checks: `(mode = 'snapshot' and snapshot_payload is not null and snapshot_as_of is not null) or (mode = 'live' and snapshot_payload is null)`
 - Indexes: `unique(token)`, `index(portfolio_id)`
 
 ### Sector classification mapping
@@ -220,11 +222,12 @@ Securities map into 10 distinct architectural styles:
 ### Key invariants
 
 - Every listing points to exactly one canonical security by foreign key.
-- A portfolio cannot contain duplicate holdings for the same security; duplicate inputs merge cumulative cost and quantity.
+- A security has at most one primary listing (`is_primary = true`), and the primary listing defaults to NSE for NSE traded equities.
+- A portfolio cannot contain duplicate holdings for the same security; duplicate inputs merge cumulative cost and quantity within an atomic transaction.
 - Holding quantity and total cost must be strictly positive (`quantity > 0`, `total_cost > 0`).
 - A user can possess at most one portfolio where `is_default` is true.
 - Public share endpoints must never return `quantity`, `total_cost`, or individual holding rupee values.
-- Unlisted share tokens must contain at least 256 bits of cryptographically random entropy (64 hex characters).
+- Unlisted share tokens must contain 256 bits of cryptographically random entropy (stored as 64 hex characters).
 
 ### Security and authorization model
 
@@ -232,6 +235,7 @@ Securities map into 10 distinct architectural styles:
 - **Authenticated users**: Can create, read, update, and delete their own portfolios and holdings. Application services enforce that `portfolio.user_id` equals the authenticated Better Auth `session.user.id`.
 - **Public share access**: Unauthenticated viewers access shared cities via unlisted token lookup. Inactive or revoked tokens return 404.
 - **Privacy projection**: Public responses serialize to an allow listed Data Transfer Object that strips quantities, buy prices, and individual stock market values.
+- **Drizzle version convention**: As detected in `package.json`, Drizzle ORM version is 0.45.x, so relational queries use the `relations()` helper API.
 
 ### Configuration required
 
@@ -250,7 +254,7 @@ No new external API secrets are required. The data model uses existing `DATABASE
 Ordered per the Skateboard build approach:
 
 1. **Domain core types and error invariants**: Define plain TypeScript domain entities (`Security`, `Holding`, `Portfolio`, `ShareView`) and valuation formulas in `src/domain/` with zero external dependencies (satisfies AC-2, AC-5).
-2. **Drizzle schema definitions**: Implement PostgreSQL tables for `securities`, `listings`, `daily_prices`, `portfolios`, `holdings`, and `share_links` in `src/infrastructure/db/schema/` with foreign keys, check constraints, and unique indexes (satisfies AC-1, AC-2, AC-4, AC-6, AC-8).
+2. **Drizzle schema definitions**: Implement PostgreSQL tables for `securities`, `listings`, `daily_prices`, `portfolios`, `holdings`, and `share_links` in `src/infrastructure/db/schema/` with foreign keys, check constraints, and unique indexes using Drizzle 0.45.x `relations()` syntax (satisfies AC-1, AC-2, AC-4, AC-6, AC-8).
 3. **Database migration**: Generate versioned SQL migration using `drizzle-kit generate` and apply to database using `drizzle-kit migrate` (satisfies AC-1, AC-6).
 4. **Domain math services**: Implement calculation functions for cumulative cost merges, portfolio valuation summaries, and logarithmic building height scaling (satisfies AC-3, AC-5).
 5. **Guest synchronization service**: Create local storage schemas and synchronization logic supporting both merge and replace strategies via ISIN mapping (satisfies AC-7).
