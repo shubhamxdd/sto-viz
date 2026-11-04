@@ -2,7 +2,7 @@
 
 ## 1. Entity Relationship Diagram
 
-The diagram below illustrates the relational schema modeled in Drizzle ORM. Canonical securities are separated from exchange listings to support dual listed stocks across NSE and BSE, while holdings store cumulative cost to prevent weighted average drift.
+The diagram below illustrates the relational schema modeled in Drizzle ORM. Canonical securities are separated from exchange listings to support dual listed stocks across NSE and BSE, while monetary columns persist as native integer paise (`bigint`) to eliminate rounding drift.
 
 ```mermaid
 erDiagram
@@ -15,9 +15,9 @@ erDiagram
 
     SECURITIES {
         uuid id PK
-        varchar isin UK "12 char uppercase ISIN"
+        varchar isin UK "12 char uppercase ISIN regex check"
         varchar company_name
-        varchar sector "10 archetype categories"
+        varchar sector "10 archetype categories check"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -25,7 +25,7 @@ erDiagram
     LISTINGS {
         uuid id PK
         uuid security_id FK
-        varchar exchange "NSE or BSE"
+        varchar exchange "NSE or BSE check"
         varchar symbol "Ticker symbol"
         boolean is_primary "At most one primary per security"
         boolean is_active
@@ -36,11 +36,11 @@ erDiagram
         uuid id PK
         uuid listing_id FK
         date price_date "Bhavcopy trading date"
-        numeric close_price "Closing price"
-        numeric previous_close
+        bigint close_price_paise "Closing price in paise > 0"
+        bigint previous_close_paise "Previous close in paise > 0"
         numeric change_percent
         bigint volume
-        varchar source "NSE_BHAVCOPY or BSE_BHAVCOPY"
+        varchar source "NSE_BHAVCOPY or BSE_BHAVCOPY check"
     }
 
     USERS {
@@ -65,7 +65,7 @@ erDiagram
         uuid portfolio_id FK
         uuid security_id FK
         integer quantity "Whole shares > 0"
-        numeric total_cost "Cumulative invested rupees > 0"
+        bigint total_cost_paise "Cumulative invested paise > 0"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -73,8 +73,8 @@ erDiagram
     SHARE_LINKS {
         uuid id PK
         uuid portfolio_id FK
-        varchar token UK "64 hex char token"
-        varchar mode "live or snapshot"
+        varchar token UK "64 hex char token regex check"
+        varchar mode "live or snapshot check"
         jsonb snapshot_payload "Sanitized public DTO"
         timestamptz snapshot_as_of "Snapshot timestamp"
         boolean show_rupee_totals "Optional portfolio sum"
@@ -99,7 +99,7 @@ flowchart TD
     QueryCloud --> HasCloudData{"Cloud holdings exist?"}
     HasCloudData -- No --> DirectMigration["Create default portfolio and copy browser holdings to database"]
     HasCloudData -- Yes --> PromptConflict["Prompt user: Merge or Replace cloud portfolio?"]
-    PromptConflict -- Merge --> MergeHoldings["Merge holdings: combine quantities and sum cumulative costs"]
+    PromptConflict -- Merge --> MergeHoldings["Merge holdings: combine quantities and sum cumulative paise costs"]
     PromptConflict -- Replace --> ReplaceHoldings["Transactional replacement: replace cloud holdings with incoming browser holdings"]
     DirectMigration --> SyncDone["Clear browser storage and switch to cloud sync"]
     MergeHoldings --> SyncDone
@@ -109,26 +109,27 @@ flowchart TD
 
 ## 3. Public Sharing Privacy Projection Boundary
 
-To prevent viewers from discovering private holding sizes by dividing market values by public closing prices, individual holding rupee values and share counts are stripped at the server projection boundary. Total rupee amounts are optionally shown only at the aggregate portfolio level, and suppressed if the portfolio contains only one stock.
+To prevent viewers from discovering private holding sizes, individual holding rupee values and share counts are stripped at the server projection boundary. Total rupee amounts are optionally shown only at the aggregate portfolio level, and automatically suppressed if the portfolio contains only one stock.
 
 ```mermaid
 flowchart LR
     subgraph PrivateDatabase["Protected Database State"]
         H["Holding Record"]
         H --> Q["quantity = 150 shares"]
-        H --> C["total_cost = Rs 3,75,000"]
-        DP["Daily Closing Price = Rs 2,750"]
+        H --> C["total_cost_paise = 37500000"]
+        DP["Daily Closing Price = 275000 paise"]
     end
 
     subgraph SecurityBoundary["Server Projection Boundary"]
         Filter["Sanitization Filter: strips quantity and costs"]
+        SingleCheck["Single Stock Gate: nullifies total if count <= 1"]
     end
 
     subgraph PublicView["Public Shared City View"]
         DTO["Allow listed Public DTO"]
         DTO --> SName["Company Name & Ticker"]
         DTO --> SSector["Sector Architectural Style"]
-        DTO --> SPct["Position Gain: +10 percent"]
+        DTO --> SPct["Position Gain: +10 percent (visual glow)"]
         DTO --> STotal["Aggregate Portfolio Total (multi stock only)"]
         DTO -.-> Blocked["Never sent: quantity, total cost, or individual rupee amounts"]
     end
@@ -139,7 +140,7 @@ flowchart LR
 
 ## 4. Mathematical Valuation to 3D Scene Pipeline
 
-The diagram below traces how exact financial numbers in integer paise map into procedural 3D building geometries and neon visual shaders without floating point inaccuracies.
+The diagram below traces how exact financial numbers in integer paise (`bigint`) map into procedural 3D building geometries and neon visual shaders without floating point inaccuracies.
 
 ```mermaid
 flowchart TD
