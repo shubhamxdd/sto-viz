@@ -34,14 +34,14 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 Decide the web application stack, 3D rendering setup, backend service, and database, then scaffold a runnable project so every later slice builds on real structure.
 **Done when:** the stack choices are recorded in a spec, and the scaffolded project runs locally and passes build checks.
 - [x] Decide the stack (spec): `/architect stack and architecture`
-- [ ] Scaffold from the decision: `/develop stack and architecture`
+- [x] Scaffold from the decision: `/develop stack and architecture`
 - [ ] Smoke check it runs: `/test`
-Spec [0001](../specs/0001-stack-and-architecture.md)
+Spec [0001](../specs/0001-stack-and-architecture.md) · code in src/
 
 ### 2. Coding standards and tooling
 Capture conventions, then install lint, format, and pre-commit enforcement from the real scaffolded project.
 **Done when:** root AGENTS.md reflects the real stack, and lint and format checks run clean.
-- [ ] Capture conventions and tooling choices: `/audit`
+- [x] Capture conventions and tooling choices: `/audit`
 
 ### 3. Data model · needs a decision
 Core entities every feature builds on: stocks, holdings, daily prices, user accounts, and share links.

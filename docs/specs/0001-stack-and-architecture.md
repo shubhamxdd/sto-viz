@@ -138,11 +138,11 @@ Schema migrations follow strict version control and deploy time separation:
 
 ## Follow-up
 
-- [ ] Configure `next.config.js` with `output: 'standalone'` for lean container packaging
-- [ ] Create multi stage `Dockerfile` with non root user execution
-- [ ] Create `docker-compose.yml` defining application, PostgreSQL, Caddy, and worker services
-- [ ] Set up automated database backup script with daily snapshot dumps to off host storage
-- [ ] Create migration runner script in `package.json` for one shot deployment execution
+- [x] Configure `next.config.js` with `output: 'standalone'` for lean container packaging
+- [x] Create multi stage `Dockerfile` with non root user execution
+- [x] Create `docker-compose.yml` defining application, PostgreSQL, Caddy, and worker services
+- [x] Set up automated database backup script with daily snapshot dumps to off host storage
+- [x] Create migration runner script in `package.json` for one shot deployment execution
 
 ## References
 
