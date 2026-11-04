@@ -1,0 +1,72 @@
+# FolioCity
+
+## Stack
+
+- **Language / Runtime**: TypeScript 5+, Node.js
+- **Framework**: Next.js App Router
+- **3D Graphics**: React Three Fiber, Three.js
+- **Database & ORM**: PostgreSQL 16, Drizzle ORM
+- **Auth & State**: Better Auth, Zustand
+- **UI & Styling**: Tailwind CSS, shadcn/ui
+- **Deployment**: Docker Compose, Caddy
+
+## Build approach
+
+Skateboard (ship the thinnest usable whole first, then grow it)
+
+## Commands
+
+```bash
+# Install
+npm install
+
+# Dev server
+npm run dev
+
+# Build
+npm run build
+
+# Test
+npm run test
+```
+
+## Git
+
+- integration: on
+- branch prefix: feat/
+- commit: per-milestone
+
+## Tooling
+
+- Linter and formatter: Biome
+- Pre commit checks: lint, format, and type check
+- Testing gate: Vitest and React Testing Library
+- Continuous integration: GitHub Actions (lint, type check, tests)
+
+## Specs
+
+Stored in `docs/specs/`. Format: `docs/specs/NNNN-title.md`.
+
+## Rules
+
+- Clean Architecture layers: domain, application, infrastructure, presentation.
+- Outer layers depend on inner layers; domain has zero external imports.
+- Entities enforce invariants; no framework or ORM decorators inside domain.
+- Cross boundary calls use plain transfer objects; interfaces inverted across boundaries.
+- Strict TypeScript (no any types, strict null checks, exhaustive matching).
+- Colocate code by feature folder; validate environment variables on boot.
+- Consistent custom error classes; document public APIs; conventional commits.
+
+## Agent skills
+
+- [drizzle-best-practices](.agents/skills/drizzle-best-practices/): `honra-io/drizzle-best-practices`, Drizzle schema design and migrations
+- [better-auth-best-practices](.agents/skills/better-auth-best-practices/): `better-auth/skills`, Better Auth configuration
+- [r3f-fundamentals](.agents/skills/r3f-fundamentals/): `EnzeD/r3f-skills`, React Three Fiber scenes
+- [shadcn](.agents/skills/shadcn/): `shadcn/ui`, UI components
+MCP servers: PostgreSQL (recommended), Docker (recommended)
+
+## Context files
+
+<!-- Nested AGENTS.md files are listed here as they are created -->
+
+_Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._
