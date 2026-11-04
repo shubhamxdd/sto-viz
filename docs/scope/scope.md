@@ -53,7 +53,7 @@ Core entities every feature builds on: stocks, holdings, daily prices, user acco
   - [x] Database migration and initial security seed script (AC-1, AC-6)
   - [x] Guest storage synchronization and share link projection filter (AC-7, AC-8)
 - [x] Verify it: `/check verify data model`
-- [ ] Test it: `/test data model`
+- [x] Test it: `/test data model`
 Spec [0002](../specs/0002-data-model.md) · code in src/domain/ and src/infrastructure/db/schema/
 
 ### 4. Design system and 3D canvas · needs a decision
