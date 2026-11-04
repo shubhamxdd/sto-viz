@@ -1,7 +1,7 @@
 # 0001. Stack and Architecture for FolioCity
 
 **Date**: 2026-11-04
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
