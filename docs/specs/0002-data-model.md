@@ -1,7 +1,7 @@
 # 0002. Data Model and Domain Contracts for FolioCity
 
 **Date**: 2026-11-04
-**Status**: Proposed
+**Status**: Accepted
 
 ## Summary
 
@@ -11,13 +11,13 @@ This document establishes the canonical data model, domain entities, and persist
 
 FolioCity visualizes Indian stock portfolios as a cyberpunk 3D cityscape where each building represents one company holding. To create a dependable visualization without paper trading or live streaming noise, the system requires a clean foundational data model that unifies several distinct operational concerns.
 
-First, Indian equities trade across two major exchanges, the National Stock Exchange (NSE) and the Bombay Stock Exchange (BSE). A single company shares one unique International Securities Identification Number (ISIN) across both exchanges while carrying different ticker symbols. The data model decouples canonical securities from exchange listings, selecting the primary NSE listing as the authoritative valuation benchmark while indexing BSE tickers for seamless search.
+First, Indian equities trade across two major exchanges, the National Stock Exchange (NSE) and the Bombay Stock Exchange (BSE). A single company shares one unique International Securities Identification Number (ISIN) across both exchanges while carrying different ticker symbols. The data model decouples canonical securities from exchange listings, selecting the active primary NSE listing as the authoritative valuation benchmark while indexing BSE tickers for seamless search.
 
-Second, the product starts with zero friction. First time visitors enter up to three stocks stored solely in browser local storage. When adding a fourth stock, the application prompts them to sign in, which synchronizes their holdings to cloud storage in PostgreSQL. If the cloud account already holds stock records from another device, the system handles the conflict gracefully by letting the user choose between merging holdings with weighted average buy prices or transactionally replacing them.
+Second, the product starts with zero friction. First time visitors enter up to three stocks stored solely in browser local storage. When adding a fourth stock, the application prompts them to sign in, which synchronizes their holdings to cloud storage in PostgreSQL. If the cloud account already holds stock records from another device, the system handles the conflict gracefully by letting the user choose between merging holdings with weighted average buy prices or transactionally replacing them with optimistic concurrency version tracking.
 
-Third, unlisted share links allow users to showcase their cyberpunk skyline publicly without compromising financial privacy. The privacy boundary guarantees that share quantities, invested amounts, and individual stock rupee valuations are never projected over the public network. Public viewers see building neon glow colors, percentage moves, and sector styles, which conceals net worth and share counts. While individual percentage gains allow deriving past per share buy prices from public market closes, personal wealth and share counts remain completely hidden. When the owner opts in to show total rupee amounts, only the aggregate portfolio total is exposed, with automatic suppression if the portfolio contains only one stock to prevent individual capital deduction.
+Third, unlisted share links allow users to showcase their cyberpunk skyline publicly without compromising financial privacy. The privacy boundary guarantees that share quantities, invested amounts, and individual stock rupee valuations are never projected over the public network. Public viewers see building neon glow colors, percentage moves, and sector styles, which conceals net worth and share counts. While individual percentage gains allow deriving past per share buy prices from public market closes, personal wealth and share counts remain protected. When the owner opts in to show total rupee amounts, only the quantized aggregate current portfolio market value is exposed, with automatic suppression if the portfolio contains fewer than three stocks to prevent solving systems of equations.
 
-Finally, equity valuation calculations must remain deterministic and avoid floating point inaccuracies or accumulated drift. Rather than using floating point numbers or decimal strings, monetary storage throughout PostgreSQL and domain entities is standardized in integer paise (`bigint`), where one rupee equals one hundred paise. Exact arithmetic eliminates rounding drift across repeated purchases, converting to floating point numbers solely when calculating final 3D building geometry heights and shader parameters.
+Finally, equity valuation calculations must remain deterministic and avoid floating point inaccuracies or accumulated drift. Rather than using floating point numbers or decimal strings, monetary storage throughout PostgreSQL and domain entities is standardized in integer paise (`bigint` with mode `bigint` in Drizzle), where one rupee equals one hundred paise. At the serialization and local storage boundary, paise values serialize as strings (`"totalCostPaise": "37500000"`) because standard JSON does not support BigInt. A strict string parser validates and converts user decimal text to integer paise without intermediate JavaScript numbers. Exact arithmetic eliminates rounding drift across repeated purchases, converting to floating point numbers solely when calculating final 3D building geometry heights and shader parameters.
 
 ## Requirements
 
@@ -29,14 +29,14 @@ Finally, equity valuation calculations must remain deterministic and avoid float
 - As a signed in user, I want to create an unlisted share link to my city so that I can share my visual achievements with friends while keeping my sensitive share quantities private.
 
 **Acceptance criteria**:
-- **AC-1**: Securities store uppercase 12 character ISINs matching standard format, official company names, and sector classifications. Listings link securities to NSE and BSE tickers with a partial unique index ensuring at most one primary listing per security, governed by transactional promotion and fallback rules.
+- **AC-1**: Securities store uppercase 12 character ISINs matching standard format, official company names, and sector classifications. Listings link securities to active NSE and BSE tickers with a partial unique index ensuring at most one primary listing per security, governed by transactional promotion and active fallback rules.
 - **AC-2**: Holdings store positive integer share quantities and cumulative invested cost in integer paise (`bigint`), enforcing check constraints at database and entity layers.
 - **AC-3**: Duplicate entries of the same stock merge automatically within an atomic transaction by summing quantities and invested costs in paise, calculating weighted average buy price on demand without compounding rounding drift.
 - **AC-4**: Daily closing prices record historical exchange closing prices in integer paise indexed by listing ID and date, preventing duplicate daily records through compound unique constraints.
 - **AC-5**: Portfolio valuation formulas compute invested capital, current market value, profit or loss in rupees, and profit or loss percentage using exact integer paise arithmetic without floating point drift. Building height scales using a capped logarithmic curve.
 - **AC-6**: Portfolios associate directly with Better Auth user accounts while maintaining isolated holdings and enforcing a single default portfolio per user via partial unique indexing.
 - **AC-7**: Account synchronization handles conflicts between browser local storage and cloud records using stable ISIN identifiers, prompting the user to either merge holdings or transactionally replace cloud holdings.
-- **AC-8**: Unlisted share links use cryptographically random 256 bit tokens, support live or frozen snapshot modes with explicit cross column validity checks, and project public payloads that omit share quantities, buy prices, and individual stock market values. If a portfolio has only one holding, total rupee amounts are suppressed to protect privacy.
+- **AC-8**: Unlisted share links use cryptographically random 256 bit tokens, support live or frozen snapshot modes with explicit cross column validity checks, and project public payloads that omit share quantities, buy prices, and individual stock market values. If a portfolio has fewer than three holdings, total rupee amounts are suppressed to protect privacy. When enabled with three or more holdings, totals are quantized to the nearest thousand rupees.
 
 ## Options considered
 
@@ -90,7 +90,7 @@ FolioCity will implement a normalized relational schema in PostgreSQL using Driz
 
 Option 1 resolves the core challenges raised during architectural review.
 
-Separating `securities` (identified by ISIN) from `listings` (exchange tickers) allows companies listed on both NSE and BSE to resolve to a single canonical holding. Valuation queries default to the primary NSE listing price while still supporting BSE ticker search.
+Separating `securities` (identified by ISIN) from `listings` (exchange tickers) allows companies listed on both NSE and BSE to resolve to a single canonical holding. Valuation queries default to the active primary NSE listing price while still supporting BSE ticker search.
 
 Storing `total_cost_paise` (quantity multiplied by buy price in paise) in holdings rather than a rounded unit price eliminates compounding drift. The average buy price is computed dynamically as `total_cost_paise / quantity`, preserving financial precision across repeated merges.
 
@@ -120,20 +120,27 @@ Exchange specific trading ticker symbol.
 - `is_active`: `boolean`, not null, default true
 - `created_at`: `timestamptz`, not null, default `now()`
 - `updated_at`: `timestamptz`, not null, default `now()`
-- Indexes: `unique(exchange, symbol)`, `index(symbol)`, `index(security_id)`, `unique(security_id) where is_primary = true`
+- Checks: `(not is_primary or is_active)` ensuring inactive listings cannot be primary
+- Indexes: `unique(exchange, symbol)`, `unique(id, exchange)`, `index(symbol)`, `index(security_id)`, `unique(security_id) where is_primary = true`
 
 #### 3. `daily_prices`
 Daily closing prices ingested from official exchange Bhavcopy files.
 - `id`: `uuid`, primary key, default `gen_random_uuid()`
-- `listing_id`: `uuid`, not null, references `listings(id)` on delete cascade
+- `listing_id`: `uuid`, not null
+- `exchange`: `varchar(10)`, not null, check `(exchange in ('NSE', 'BSE'))`
 - `price_date`: `date`, not null
 - `close_price_paise`: `bigint`, not null, check `(close_price_paise > 0)`
 - `previous_close_paise`: `bigint`, not null, check `(previous_close_paise > 0)`
 - `change_percent`: `numeric(8, 4)`, not null
 - `volume`: `bigint`
-- `source`: `varchar(30)`, not null, default 'NSE_BHAVCOPY', check `(source in ('NSE_BHAVCOPY', 'BSE_BHAVCOPY'))`
+- `source`: `varchar(30)`, not null, default 'NSE_BHAVCOPY', check `(source in ('NSE_BHAVCOPY', 'BSE_BHAVCOPY', 'MANUAL'))`
+- `ingested_at`: `timestamptz`, not null, default `now()`
 - `created_at`: `timestamptz`, not null, default `now()`
-- Indexes: `unique(listing_id, price_date)`, `index(price_date)`
+- Foreign keys: `foreign key (listing_id, exchange) references listings(id, exchange) on delete cascade`
+- Checks:
+  - Provenance matching: `((exchange = 'NSE' and source = 'NSE_BHAVCOPY') or (exchange = 'BSE' and source = 'BSE_BHAVCOPY') or (source = 'MANUAL'))`
+  - Positive values: `(close_price_paise > 0 and previous_close_paise > 0)`
+- Indexes: `unique(listing_id, price_date)`, `index(price_date)`, `index(exchange, price_date)`
 
 #### 4. `portfolios`
 Represents an investor city collection.
@@ -169,7 +176,9 @@ Unlisted share links with public projection.
 - `is_active`: `boolean`, not null, default true
 - `revoked_at`: `timestamptz`
 - `created_at`: `timestamptz`, not null, default `now()`
-- Checks: `((mode = 'snapshot' and snapshot_payload is not null and snapshot_as_of is not null) or (mode = 'live' and snapshot_payload is null and snapshot_as_of is null))`
+- Checks:
+  - Mode consistency: `((mode = 'snapshot' and snapshot_payload is not null and snapshot_as_of is not null) or (mode = 'live' and snapshot_payload is null and snapshot_as_of is null))`
+  - Revocation consistency: `((is_active = true and revoked_at is null) or (is_active = false and revoked_at is not null))`
 - Indexes: `unique(token)`, `index(portfolio_id)`
 
 ### Sector classification mapping
@@ -188,7 +197,60 @@ Securities map into 10 distinct architectural styles:
 
 ### Mathematical invariants and domain representation
 
-Financial arithmetic inside domain entities uses integer paise (`bigint`) to guarantee exact math with zero external libraries:
+Financial arithmetic inside domain entities uses integer paise (`bigint`) to guarantee exact math with zero external libraries.
+
+**Lossless monetary boundary and JSON serialization**:
+Inside PostgreSQL and Drizzle ORM, monetary values persist as native PostgreSQL `bigint` with `{ mode: "bigint" }` (for example `bigint("total_cost_paise", { mode: "bigint" })`).
+Because standard JSON does not support JavaScript `BigInt` directly, API payloads, local storage schemas, and serialized network data transfer objects represent paise as numeric strings (for example `"totalCostPaise": "37500000"`).
+Domain entities convert strings to `BigInt` upon ingestion and format to strings when serializing:
+- Ingestion boundary: `totalCostPaise = BigInt(dto.totalCostPaise)`
+- Serialization boundary: `dto.totalCostPaise = holding.totalCostPaise.toString()`
+
+**Strict string parser for monetary inputs**:
+User entered rupee strings parse directly to integer paise without floating point numbers. The parser strictly validates the format, rejecting negative values, zero amounts, extra decimals, or values exceeding PostgreSQL bigint bounds:
+```typescript
+const PG_BIGINT_MAX = 9223372036854775807n;
+
+export class InvalidCurrencyFormatError extends AppError {
+  constructor(input: string) {
+    super(`Invalid rupee currency format: "${input}". Expected positive number with up to 2 decimal places.`);
+  }
+}
+
+export class CurrencyOutOfBoundsError extends AppError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export function parseRupeesToPaise(input: string): bigint {
+  const clean = input.trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(clean)) {
+    throw new InvalidCurrencyFormatError(input);
+  }
+  const [whole, fraction = ""] = clean.split(".");
+  const paiseFraction = fraction.padEnd(2, "0");
+  const parsedPaise = BigInt(whole) * 100n + BigInt(paiseFraction);
+  if (parsedPaise <= 0n) {
+    throw new CurrencyOutOfBoundsError("Price must be strictly positive");
+  }
+  if (parsedPaise > PG_BIGINT_MAX) {
+    throw new CurrencyOutOfBoundsError("Price exceeds maximum storage limit");
+  }
+  return parsedPaise;
+}
+
+export function formatPaiseToRupees(paise: bigint): string {
+  const isNegative = paise < 0n;
+  const absPaise = isNegative ? -paise : paise;
+  const wholeRupees = absPaise / 100n;
+  const fractionPaise = absPaise % 100n;
+  const prefix = isNegative ? "-" : "";
+  return `${prefix}₹${wholeRupees.toString()}.${fractionPaise.toString().padStart(2, "0")}`;
+}
+```
+
+**Formulas in paise**:
 - 1 Rupee = 100 Paise
 - `current_value_paise = BigInt(quantity) * close_price_paise`
 - `profit_or_loss_paise = current_value_paise - total_cost_paise`
@@ -198,7 +260,21 @@ Financial arithmetic inside domain entities uses integer paise (`bigint`) to gua
 **Duplicate purchase merge**:
 - `merged_quantity = existing_quantity + added_quantity`
 - `merged_total_cost_paise = existing_total_cost_paise + (BigInt(added_quantity) * added_buy_price_paise)`
-- `derived_average_buy_price_rupees = Number(merged_total_cost_paise) / (Number(merged_quantity) * 100)`
+- `average_buy_price_paise = merged_total_cost_paise / BigInt(merged_quantity)`
+- `average_buy_price_remainder_paise = merged_total_cost_paise % BigInt(merged_quantity)`
+
+All financial aggregations, costs, and buy prices remain strictly in integer `bigint` paise. Formatting to user facing rupee text utilizes `formatPaiseToRupees` with pure integer math. JavaScript `Number` conversion is prohibited for monetary currency amounts and allowed solely for presentation outputs: percentage display, 3D logarithmic building height scaling, and shader uniforms.
+
+At the database level, duplicate stock merges execute atomically using PostgreSQL upsert:
+```sql
+INSERT INTO holdings (portfolio_id, security_id, quantity, total_cost_paise, created_at, updated_at)
+VALUES ($1, $2, $3, $4, NOW(), NOW())
+ON CONFLICT (portfolio_id, security_id)
+DO UPDATE SET
+  quantity = holdings.quantity + EXCLUDED.quantity,
+  total_cost_paise = holdings.total_cost_paise + EXCLUDED.total_cost_paise,
+  updated_at = NOW();
+```
 
 **Building height scaling curve**:
 - `total_cost_rupees = Number(total_cost_paise) / 100`
@@ -207,46 +283,69 @@ Where `min_height = 2`, `max_height = 30`, and values are clamped within bounds.
 
 ### Primary listing transactional resolution rules
 
-To maintain exactly one primary listing per security in application services:
-1. When inserting a new listing for a security:
-   - If the new listing is for exchange `NSE`, an atomic transaction sets any existing listing for that security to `is_primary = false`, then inserts the new NSE listing with `is_primary = true`.
-   - If the new listing is for exchange `BSE` and no listing currently exists for that security, it is created with `is_primary = true`. If an NSE listing already exists, the BSE listing is created with `is_primary = false`.
+To maintain exactly one active primary listing per security in application services:
+1. When inserting, updating, or promoting a listing:
+   - Modifications execute inside an explicit database transaction.
+   - The transaction explicitly acquires an exclusive row lock on the parent security row to serialize concurrent promotions:
+     `SELECT id FROM securities WHERE id = $1 FOR UPDATE`
+   - If an incoming listing has `is_primary = true`, the transaction updates any existing primary listing for that security:
+     `UPDATE listings SET is_primary = false, updated_at = NOW() WHERE security_id = $1 AND is_primary = true`
+   - Then sets the target listing:
+     `UPDATE listings SET is_primary = true, updated_at = NOW() WHERE id = $2`
+   - Inactive primary listings are prohibited by check constraint `(not is_primary or is_active)` and partial unique index `WHERE is_primary = true`.
+   - When ingesting listings: exchange `NSE` takes priority. If an active NSE listing exists, it receives `is_primary = true`. If only a `BSE` listing exists, it is marked `is_primary = true` until an active NSE listing is added.
 2. When querying market valuation for a security:
-   - Queries perform `LEFT JOIN listings l ON l.security_id = s.id AND l.is_primary = true`.
-   - If for any reason no listing has `is_primary = true`, queries fall back to ordering by exchange priority (`CASE WHEN exchange = 'NSE' THEN 1 ELSE 2 END`) with limit 1.
+   - Queries join active primary listings: `LEFT JOIN listings l ON l.security_id = s.id AND l.is_primary = true AND l.is_active = true`.
+   - If no primary listing is active, queries fall back deterministically to active listings ordered by exchange preference: `WHERE l.is_active = true ORDER BY CASE WHEN l.exchange = 'NSE' THEN 1 ELSE 2 END LIMIT 1`.
+
+### Optimistic concurrency control for guest synchronization
+
+When synchronizing guest browser holdings with cloud portfolios:
+1. Each portfolio row maintains a monotonically increasing `version` integer column (initial default 1).
+2. During merge or replace operations, the application executes updates conditioned on `WHERE id = $id AND version = $expected_version`.
+3. If concurrent requests from multiple devices attempt synchronization simultaneously, one succeeds and increments `version = version + 1`, while conflicting requests receive a concurrency error prompting a refresh.
 
 ### Public Data Transfer Object and privacy gate
 
-Public viewing endpoints serialize to a strictly typed Data Transfer Object:
+Public viewing endpoints serialize to a strictly typed Data Transfer Object. Aggregate totals represent current market valuation (sum of current share values), never invested cost or raw share quantities.
 
 ```typescript
 export interface PublicBuildingViewDto {
   symbol: string;
   companyName: string;
   sector: string;
-  profitOrLossPercent: number; // Intentional visual signal driving building neon glow
+  profitOrLossPercent: number; // Visual signal driving building neon glow
+  pricingAsOf: string; // ISO 8601 date (YYYY-MM-DD) of the Bhavcopy closing price for this stock
+  isPriceStale: boolean; // Flagged true if closing Bhavcopy price is older than 2 trading sessions
 }
 
 export interface PublicShareViewDto {
   portfolioName: string;
   mode: "live" | "snapshot";
-  snapshotAsOf: string | null;
+  snapshotAsOf: string | null; // ISO 8601 timestamp if frozen snapshot
+  pricingAsOf: string; // Latest Bhavcopy closing market date across constituents
+  oldestPricingAsOf: string; // Oldest Bhavcopy closing market date across constituents
   totalProfitOrLossPercent: number;
-  totalRupeeAmount: number | null; // Included ONLY if showRupeeTotals is true AND holdingCount > 1
+  totalRupeesFormatted: string | null; // Quantized string, included ONLY if showRupeeTotals is true AND holdingCount >= 3
+  isStale: boolean;
   buildings: PublicBuildingViewDto[];
 }
 ```
 
-**Single holding privacy rule**:
-If a portfolio contains only one holding (`holdingCount <= 1`), `totalRupeeAmount` is always set to `null` in the public payload, even if the portfolio owner enabled `show_rupee_totals`. This ensures aggregate net worth cannot be equated to the value of a single stock.
+**Privacy rules and algebraic deduction threat model**:
+- In a small portfolio of 1 or 2 holdings, exposing an exact aggregate current value alongside individual position percentage moves creates a solvable system of linear equations from public Bhavcopy prices, allowing a viewer to deduce exact share quantities.
+- To counter this threat model, `totalRupeesFormatted` is ALWAYS set to `null` if the portfolio contains fewer than three holdings (`holdingCount < 3`), even if the portfolio owner enabled `show_rupee_totals`.
+- When enabled on portfolios with three or more holdings (`holdingCount >= 3`), `totalRupeesFormatted` is quantized to the nearest ₹1,000 (for example "₹4,12,000"), eliminating exact algebraic solving.
+- Owner settings UI includes an explicit privacy disclosure: "Enabling total portfolio value allows public viewers to see your aggregate current portfolio market value quantized to ₹1,000. While individual quantities and costs are never sent, viewers with deep market knowledge could attempt mathematical approximation on smaller collections."
+- Snapshot payloads stored in `snapshot_payload` strictly validate against `PublicShareViewDto` schema (version 1) on generation, guaranteeing internal database quantities or costs can never be serialized into snapshot records.
 
 ### Value sourcing
 
 | Action | Value produced / displayed | Source |
 |---|---|---|
-| Enter holding | Security and listing | User selects from `listings` joined to `securities` |
+| Enter holding | Security and listing | User selects from active `listings` joined to `securities` |
 | Enter holding | Quantity | User input, whole positive integer |
-| Enter holding | Buy price | User input, converted to integer paise (`Math.round(val * 100)`) |
+| Enter holding | Buy price | User input, parsed via `parseRupeesToPaise` string splitter |
 | Merge holdings | Total cost in paise | Sum of existing `total_cost_paise` and added `quantity * buy_price_paise` |
 | Render building | Height | Computed via logarithmic scaling curve from `total_cost_paise / 100` |
 | Render building | Glow color | Derived from `profit_loss_percent` (cyan profit, red loss, blue neutral) |
@@ -258,7 +357,7 @@ If a portfolio contains only one holding (`holdingCount <= 1`), `totalRupeeAmoun
 ### Key invariants
 
 - Every listing points to exactly one canonical security by foreign key.
-- A security has at most one primary listing (`is_primary = true`), managed transactionally with NSE priority.
+- A security has at most one primary listing (`is_primary = true`), managed transactionally with NSE priority among active listings.
 - A portfolio cannot contain duplicate holdings for the same security; duplicate inputs merge cumulative cost and quantity within an atomic transaction.
 - Holding quantity and total cost must be strictly positive (`quantity > 0`, `total_cost_paise > 0`).
 - A user can possess at most one portfolio where `is_default` is true.
@@ -281,6 +380,7 @@ No new external API secrets are required. The data model uses existing `DATABASE
 
 - **Happy path**: Adding a stock holding saves valid quantity and paise cost, and adding duplicate purchases merges quantity and cost without rounding drift (verifies AC-2, AC-3).
 - **Valuation accuracy**: Holdings with known closing prices compute correct current valuation and percentage returns matching exact paise math (verifies AC-5).
+- **String parsing precision**: Decimal strings with trailing fractions parse to exact paise without JavaScript float rounding errors (verifies AC-2, AC-5).
 - **Guest migration choice**: Signing in with local storage holdings into an account with existing data provides merge and replace resolution paths using stable ISIN locators (verifies AC-7).
 - **Public privacy enforcement**: Accessing an unlisted share link returns building performance percentages without exposing share quantities or individual stock rupee valuations (verifies AC-8).
 - **Single holding total suppression**: Public share view of a one holding portfolio nullifies total rupee amounts even when `show_rupee_totals` is active (verifies AC-8).
@@ -290,7 +390,7 @@ No new external API secrets are required. The data model uses existing `DATABASE
 
 Ordered per the Skateboard build approach:
 
-1. **Domain core types and error invariants**: Define plain TypeScript domain entities (`Security`, `Holding`, `Portfolio`, `ShareView`) and valuation formulas in `src/domain/` with zero external dependencies using `bigint` paise arithmetic (satisfies AC-2, AC-5).
+1. **Domain core types and error invariants**: Define plain TypeScript domain entities (`Security`, `Holding`, `Portfolio`, `ShareView`) and valuation formulas in `src/domain/` with zero external dependencies using `bigint` paise arithmetic and string decimal parser (satisfies AC-2, AC-5).
 2. **Drizzle schema definitions**: Implement PostgreSQL tables for `securities`, `listings`, `daily_prices`, `portfolios`, `holdings`, and `share_links` in `src/infrastructure/db/schema/` with foreign keys, check constraints, and unique indexes using Drizzle 0.45.x `relations()` syntax (satisfies AC-1, AC-2, AC-4, AC-6, AC-8).
 3. **Database migration**: Generate versioned SQL migration using `drizzle-kit generate` and apply to database using `drizzle-kit migrate` (satisfies AC-1, AC-6).
 4. **Domain math services**: Implement calculation functions for cumulative cost merges, portfolio valuation summaries in integer paise, and logarithmic building height scaling (satisfies AC-3, AC-5).
@@ -302,7 +402,7 @@ Ordered per the Skateboard build approach:
 **Positive**:
 - Storing money in integer paise (`bigint`) guarantees absolute precision across all financial math and prevents floating point drift
 - Normalized separation of securities and listings cleanly models dual listed equities on NSE and BSE
-- Public share privacy projection makes quantity deduction mathematically impossible
+- Public share privacy projection with small portfolio total suppression and quantization shields personal financial assets and share counts
 - Clean Architecture separation allows domain entities to run identically in browser local storage and server database handlers
 
 **Negative / tradeoffs**:

@@ -9,7 +9,7 @@ erDiagram
     SECURITIES ||--o{ LISTINGS : "trades as"
     SECURITIES ||--o{ HOLDINGS : "held in"
     LISTINGS ||--o{ DAILY_PRICES : "priced by"
-    USERS ||--o{ PORTFOLIOS : "owns"
+    USER ||--o{ PORTFOLIOS : "owns"
     PORTFOLIOS ||--o{ HOLDINGS : "contains"
     PORTFOLIOS ||--o{ SHARE_LINKS : "shared via"
 
@@ -27,35 +27,40 @@ erDiagram
         uuid security_id FK
         varchar exchange "NSE or BSE check"
         varchar symbol "Ticker symbol"
-        boolean is_primary "At most one primary per security"
+        boolean is_primary "At most one primary per security check (not is_primary or is_active)"
         boolean is_active
         timestamptz created_at
     }
 
     DAILY_PRICES {
         uuid id PK
-        uuid listing_id FK
+        uuid listing_id FK "Composite FK with exchange to listings"
+        varchar exchange "NSE or BSE check"
         date price_date "Bhavcopy trading date"
         bigint close_price_paise "Closing price in paise > 0"
         bigint previous_close_paise "Previous close in paise > 0"
-        numeric change_percent
+        numeric change_percent "Trading day change relative to previous close"
         bigint volume
-        varchar source "NSE_BHAVCOPY or BSE_BHAVCOPY check"
+        varchar source "Provenance check matches exchange"
+        timestamptz ingested_at
     }
 
-    USERS {
+    USER {
         text id PK "Better Auth user identifier"
-        varchar email
-        varchar name
-        timestamptz email_verified
+        text name
+        varchar email UK
+        boolean email_verified
+        text image
+        timestamp created_at
+        timestamp updated_at
     }
 
     PORTFOLIOS {
         uuid id PK
-        text user_id FK
+        text user_id FK "References user(id)"
         varchar name "City name"
         boolean is_default "Only one default per user"
-        integer version "Concurrency tracking"
+        integer version "Optimistic concurrency version tracking"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -75,11 +80,11 @@ erDiagram
         uuid portfolio_id FK
         varchar token UK "64 hex char token regex check"
         varchar mode "live or snapshot check"
-        jsonb snapshot_payload "Sanitized public DTO"
+        jsonb snapshot_payload "Validated PublicShareViewDto schema"
         timestamptz snapshot_as_of "Snapshot timestamp"
-        boolean show_rupee_totals "Optional portfolio sum"
-        boolean is_active
-        timestamptz revoked_at
+        boolean show_rupee_totals "Optional aggregate market value"
+        boolean is_active "Active flag"
+        timestamptz revoked_at "Revocation timestamp check"
         timestamptz created_at
     }
 ```
@@ -109,28 +114,31 @@ flowchart TD
 
 ## 3. Public Sharing Privacy Projection Boundary
 
-To prevent viewers from discovering private holding sizes, individual holding rupee values and share counts are stripped at the server projection boundary. Total rupee amounts are optionally shown only at the aggregate portfolio level, and automatically suppressed if the portfolio contains only one stock.
+To prevent viewers from discovering private holding sizes, individual holding rupee values and share counts are stripped at the server projection boundary. Total rupee amounts are optionally shown only at the aggregate current portfolio market value level, and automatically suppressed if the portfolio contains fewer than three stocks to prevent algebraic equation solving.
 
 ```mermaid
 flowchart LR
     subgraph PrivateDatabase["Protected Database State"]
         H["Holding Record"]
         H --> Q["quantity = 150 shares"]
-        H --> C["total_cost_paise = 37500000"]
-        DP["Daily Closing Price = 275000 paise"]
+        H --> C["total_cost_paise = 37500000 (bigint)"]
+        DP["Daily Closing Price = 275000 paise (bigint)"]
     end
 
     subgraph SecurityBoundary["Server Projection Boundary"]
         Filter["Sanitization Filter: strips quantity and costs"]
-        SingleCheck["Single Stock Gate: nullifies total if count <= 1"]
+        SmallCheck["Small Portfolio Gate: nullifies total if count < 3"]
+        Quantize["Quantization: rounds total to nearest ₹1000 for count >= 3"]
+        Disclose["Owner UI Disclosure: explains aggregate deduction trade off"]
     end
 
     subgraph PublicView["Public Shared City View"]
-        DTO["Allow listed Public DTO"]
+        DTO["Allow listed Public DTO (JSON safe string boundaries)"]
         DTO --> SName["Company Name & Ticker"]
         DTO --> SSector["Sector Architectural Style"]
         DTO --> SPct["Position Gain: +10 percent (visual glow)"]
-        DTO --> STotal["Aggregate Portfolio Total (multi stock only)"]
+        DTO --> SAsOf["pricingAsOf per building & aggregate dates"]
+        DTO --> STotal["Quantized Aggregate Market Value (3+ stocks only)"]
         DTO -.-> Blocked["Never sent: quantity, total cost, or individual rupee amounts"]
     end
 
@@ -144,7 +152,7 @@ The diagram below traces how exact financial numbers in integer paise (`bigint`)
 
 ```mermaid
 flowchart TD
-    subgraph DataInputs["Domain Inputs"]
+    subgraph DataInputs["Domain Inputs (BigInt in memory, string in JSON)"]
         InpQty["Share Quantity (whole integer)"]
         InpCost["Total Invested Cost in Paise (bigint)"]
         InpPrice["Latest Closing Price in Paise (bigint)"]
@@ -152,7 +160,8 @@ flowchart TD
     end
 
     subgraph ExactMath["Deterministic Financial Formulas (Integer Paise)"]
-        InpQty & InpCost --> BuyPriceCalc["Average Buy Price = total_cost_paise / quantity"]
+        InpQty & InpCost --> BuyPriceCalc["Average Buy Price = total_cost_paise / quantity (integer paise)"]
+        BuyPriceCalc --> FormatCalc["formatPaiseToRupees text with integer math (no float currency)"]
         InpQty & InpPrice --> MarketValCalc["Current Value = quantity * close_price_paise"]
         MarketValCalc & InpCost --> ProfitLossCalc["Profit or Loss = current_value - total_cost_paise"]
         ProfitLossCalc & InpCost --> PctCalc["Basis Points = (Profit or Loss * 10000) / total_cost_paise"]
