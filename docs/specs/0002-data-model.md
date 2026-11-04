@@ -414,10 +414,10 @@ Ordered per the Skateboard build approach:
 
 ## Follow-up
 
-- [ ] Implement domain entity models in `src/domain/entities/`
-- [ ] Define Drizzle schemas in `src/infrastructure/db/schema/`
-- [ ] Generate and apply database migration
-- [ ] Create seed script for top NSE securities and sector taxonomy
+- [x] Implement domain entity models in `src/domain/entities/`
+- [x] Define Drizzle schemas in `src/infrastructure/db/schema/`
+- [x] Generate and apply database migration
+- [x] Create seed script for top NSE securities and sector taxonomy
 
 ## References
 

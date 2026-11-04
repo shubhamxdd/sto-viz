@@ -47,14 +47,14 @@ Capture conventions, then install lint, format, and pre-commit enforcement from 
 Core entities every feature builds on: stocks, holdings, daily prices, user accounts, and share links.
 **Done when:** schemas, relationships, and validation rules support browser storage and cloud persistence without breaking migrations.
 - [x] Design it (spec): `/architect data model`
-- [ ] Build it: `/develop data model`
-  - [ ] Domain entities and mathematical valuation services (AC-2, AC-3, AC-5)
-  - [ ] Relational Drizzle schema with foreign keys and check constraints (AC-1, AC-4, AC-6)
-  - [ ] Database migration and initial security seed script (AC-1, AC-6)
-  - [ ] Guest storage synchronization and share link projection filter (AC-7, AC-8)
+- [x] Build it: `/develop data model`
+  - [x] Domain entities and mathematical valuation services (AC-2, AC-3, AC-5)
+  - [x] Relational Drizzle schema with foreign keys and check constraints (AC-1, AC-4, AC-6)
+  - [x] Database migration and initial security seed script (AC-1, AC-6)
+  - [x] Guest storage synchronization and share link projection filter (AC-7, AC-8)
 - [ ] Verify it: `/check verify data model`
 - [ ] Test it: `/test data model`
-Spec [0002](../specs/0002-data-model.md)
+Spec [0002](../specs/0002-data-model.md) · code in src/domain/ and src/infrastructure/db/schema/
 
 ### 4. Design system and 3D canvas · needs a decision
 Visual theme, dark palette, typography, responsive 3D viewport canvas, camera controls, and quality level switches.
