@@ -36,7 +36,7 @@ Decide the web application stack, 3D rendering setup, backend service, and datab
 - [x] Decide the stack (spec): `/architect stack and architecture`
 - [x] Scaffold from the decision: `/develop stack and architecture`
 - [ ] Smoke check it runs: `/test`
-Spec [0001](../specs/0001-stack-and-architecture.md) · code in src/
+Spec [0001](../specs/0001-stack-and-architecture/index.md) · code in src/
 
 ### 2. Coding standards and tooling
 Capture conventions, then install lint, format, and pre-commit enforcement from the real scaffolded project.
