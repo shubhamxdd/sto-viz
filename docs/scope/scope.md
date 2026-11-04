@@ -13,7 +13,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 |---|---------|-------|--------|
 | 1 | Stack and architecture | Foundation | done |
 | 2 | Coding standards and tooling | Foundation | done |
-| 3 | Data model | Foundation | in-progress |
+| 3 | Data model | Foundation | done |
 | 4 | Design system and 3D canvas | Foundation | planned |
 | 5 | Manual portfolio entry | Release 1 | planned |
 | 6 | Procedural 3D city visualizer | Release 1 | planned |
@@ -43,7 +43,7 @@ Capture conventions, then install lint, format, and pre-commit enforcement from 
 **Done when:** root AGENTS.md reflects the real stack, and lint and format checks run clean.
 - [x] Capture conventions and tooling choices: `/audit`
 
-### 3. Data model · in-progress
+### 3. Data model · done
 Core entities every feature builds on: stocks, holdings, daily prices, user accounts, and share links.
 **Done when:** schemas, relationships, and validation rules support browser storage and cloud persistence without breaking migrations.
 - [x] Design it (spec): `/architect data model`
