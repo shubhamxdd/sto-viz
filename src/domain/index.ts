@@ -4,4 +4,6 @@ export * from "./entities/security";
 export * from "./entities/share-view";
 export * from "./errors/domain-error";
 export * from "./services/currency-parser";
+export * from "./services/guest-sync";
 export * from "./services/portfolio-math";
+export * from "./services/share-projection";
