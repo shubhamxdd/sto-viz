@@ -35,7 +35,7 @@ Decide the web application stack, 3D rendering setup, backend service, and datab
 **Done when:** the stack choices are recorded in a spec, and the scaffolded project runs locally and passes build checks.
 - [x] Decide the stack (spec): `/architect stack and architecture`
 - [x] Scaffold from the decision: `/develop stack and architecture`
-- [ ] Smoke check it runs: `/test`
+- [x] Smoke check it runs: `/test`
 Spec [0001](../specs/0001-stack-and-architecture/index.md) · code in src/
 
 ### 2. Coding standards and tooling
