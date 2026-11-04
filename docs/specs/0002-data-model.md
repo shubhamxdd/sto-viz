@@ -15,9 +15,9 @@ First, Indian equities trade across two major exchanges, the National Stock Exch
 
 Second, the product starts with zero friction. First time visitors enter up to three stocks stored solely in browser local storage. When adding a fourth stock, the application prompts them to sign in, which synchronizes their holdings to cloud storage in PostgreSQL. If the cloud account already holds stock records from another device, the system handles the conflict gracefully by letting the user choose between merging holdings with weighted average buy prices or transactionally replacing them.
 
-Third, unlisted share links allow users to showcase their cyberpunk skyline publicly without compromising financial privacy. The privacy boundary guarantees that share quantities, invested amounts, and individual stock rupee valuations are never projected over the public network. Public viewers see building neon glow colors, percentage moves, and sector styles, which conceals net worth and share counts. When the owner opts in to show total rupee amounts, only the aggregate portfolio total is exposed.
+Third, unlisted share links allow users to showcase their cyberpunk skyline publicly without compromising financial privacy. The privacy boundary guarantees that share quantities, invested amounts, and individual stock rupee valuations are never projected over the public network. Public viewers see building neon glow colors, percentage moves, and sector styles, which conceals net worth and share counts. When the owner opts in to show total rupee amounts, only the aggregate portfolio total is exposed, with automatic suppression if the portfolio contains only one stock to prevent individual capital deduction.
 
-Finally, equity valuation calculations must remain deterministic and avoid floating point inaccuracies or accumulated drift. Rather than repeatedly rounding unit buy prices, holdings store total invested cost alongside share quantity, computing weighted average buy prices on demand. In domain logic, exact arithmetic handles money values, converting to JavaScript numbers only when setting Three.js building geometry heights and shader parameters.
+Finally, equity valuation calculations must remain deterministic and avoid floating point inaccuracies or accumulated drift. Rather than repeatedly rounding unit buy prices, holdings store total invested cost alongside share quantity, computing weighted average buy prices on demand. In domain logic, exact integer paise arithmetic handles money values, converting to JavaScript numbers only when setting Three.js building geometry heights and shader parameters.
 
 ## Requirements
 
@@ -29,14 +29,14 @@ Finally, equity valuation calculations must remain deterministic and avoid float
 - As a signed in user, I want to create an unlisted share link to my city so that I can share my visual achievements with friends while keeping my sensitive share quantities private.
 
 **Acceptance criteria**:
-- **AC-1**: Securities store 12 character uppercase ISINs, official company names, and sector classifications. Listings link securities to NSE and BSE tickers with a partial unique index guaranteeing exactly one primary listing per security.
+- **AC-1**: Securities store uppercase 12 character ISINs matching standard format, official company names, and sector classifications. Listings link securities to NSE and BSE tickers with a partial unique index ensuring at most one primary listing per security, enforced transactionally on listing creation.
 - **AC-2**: Holdings store positive integer share quantities and cumulative invested cost with 2 decimal places, enforcing check constraints at database and entity layers.
 - **AC-3**: Duplicate entries of the same stock merge automatically within an atomic transaction by summing quantities and invested costs, calculating weighted average buy price on demand without compounding rounding drift.
 - **AC-4**: Daily closing prices record historical exchange closing prices indexed by listing ID and date, preventing duplicate daily records through compound unique constraints.
-- **AC-5**: Portfolio valuation formulas compute invested capital, current market value, profit or loss in rupees, and profit or loss percentage using exact decimal math without floating point drift. Building height scales using a capped logarithmic curve.
+- **AC-5**: Portfolio valuation formulas compute invested capital, current market value, profit or loss in rupees, and profit or loss percentage using exact integer paise arithmetic without floating point drift. Building height scales using a capped logarithmic curve.
 - **AC-6**: Portfolios associate directly with Better Auth user accounts while maintaining isolated holdings and enforcing a single default portfolio per user via partial unique indexing.
 - **AC-7**: Account synchronization handles conflicts between browser local storage and cloud records using stable ISIN identifiers, prompting the user to either merge holdings or transactionally replace cloud holdings.
-- **AC-8**: Unlisted share links use cryptographically random 256 bit tokens, support live or frozen snapshot modes with explicit cross column validity checks, and project public payloads that omit share quantities, buy prices, and individual stock market values.
+- **AC-8**: Unlisted share links use cryptographically random 256 bit tokens, support live or frozen snapshot modes with explicit cross column validity checks, and project public payloads that omit share quantities, buy prices, and individual stock market values. If a portfolio has only one holding, total rupee amounts are suppressed to protect privacy.
 
 ## Options considered
 
@@ -102,7 +102,7 @@ For public sharing, individual holding rupee values and share counts are complet
 #### 1. `securities`
 Canonical company identity across exchanges.
 - `id`: `uuid`, primary key, default `gen_random_uuid()`
-- `isin`: `varchar(12)`, not null, check `(length(isin) = 12)`
+- `isin`: `varchar(12)`, not null, check `(isin ~ '^[A-Z]{2}[A-Z0-9]{9}[0-9]$')`
 - `company_name`: `varchar(255)`, not null
 - `sector`: `varchar(50)`, not null, default 'Other', check `(sector in ('IT and Technology', 'Banks and Financial Services', 'Oil, Gas and Energy', 'Pharma and Healthcare', 'Automobiles and Manufacturing', 'FMCG and Consumer Goods', 'Metals and Mining', 'Real Estate and Infrastructure', 'Telecom and Media', 'Other'))`
 - `created_at`: `timestamptz`, not null, default `now()`
@@ -160,7 +160,7 @@ Stock holding within a portfolio.
 Unlisted share links with public projection.
 - `id`: `uuid`, primary key, default `gen_random_uuid()`
 - `portfolio_id`: `uuid`, not null, references `portfolios(id)` on delete cascade
-- `token`: `varchar(64)`, not null, unique index, check `(length(token) = 64)`
+- `token`: `varchar(64)`, not null, unique index, check `(token ~ '^[a-f0-9]{64}$')`
 - `mode`: `varchar(20)`, not null, default 'live', check `(mode in ('live', 'snapshot'))`
 - `snapshot_payload`: `jsonb`
 - `snapshot_as_of`: `timestamptz`
@@ -168,7 +168,7 @@ Unlisted share links with public projection.
 - `is_active`: `boolean`, not null, default true
 - `revoked_at`: `timestamptz`
 - `created_at`: `timestamptz`, not null, default `now()`
-- Checks: `(mode = 'snapshot' and snapshot_payload is not null and snapshot_as_of is not null) or (mode = 'live' and snapshot_payload is null)`
+- Checks: `((mode = 'snapshot' and snapshot_payload is not null and snapshot_as_of is not null) or (mode = 'live' and snapshot_payload is null and snapshot_as_of is null))`
 - Indexes: `unique(token)`, `index(portfolio_id)`
 
 ### Sector classification mapping
@@ -185,24 +185,25 @@ Securities map into 10 distinct architectural styles:
 9. `Telecom and Media`: Sleek towers with communications antennas
 10. `Other`: Generic futuristic neon cuboid
 
-### Mathematical invariants and domain formulas
+### Mathematical invariants and domain representation
 
-1. **Invested capital**:
-   `invested_amount = total_cost`
-2. **Average buy price (derived for display)**:
-   `average_buy_price = total_cost / quantity`
-3. **Current valuation**:
-   `current_value = quantity * latest_close_price`
-4. **Profit or loss in rupees**:
-   `profit_or_loss = current_value - invested_amount`
-5. **Profit or loss percentage**:
-   `profit_loss_percent = ((current_value - invested_amount) / invested_amount) * 100`
-6. **Weighted duplicate merge (exact accounting)**:
-   `merged_quantity = existing_quantity + added_quantity`
-   `merged_total_cost = existing_total_cost + (added_quantity * added_buy_price)`
-7. **Building height scaling curve**:
-   `normalized_height = min_height + (max_height - min_height) * (log10(invested_amount / 1000 + 1) / log10(max_investment / 1000 + 1))`
-   Where `min_height = 2`, `max_height = 30`, and values are clamped within bounds.
+Financial arithmetic inside domain entities uses integer paise (`bigint`) to guarantee exact math with zero external libraries:
+- 1 Rupee = 100 Paise
+- `total_cost_paise = BigInt(Math.round(Number(total_cost) * 100))`
+- `close_price_paise = BigInt(Math.round(Number(close_price) * 100))`
+- `current_value_paise = BigInt(quantity) * close_price_paise`
+- `profit_or_loss_paise = current_value_paise - total_cost_paise`
+- `profit_loss_basis_points = (profit_or_loss_paise * 10000n) / total_cost_paise`
+- `profit_loss_percent = Number(profit_loss_basis_points) / 100`
+
+**Duplicate purchase merge**:
+- `merged_quantity = existing_quantity + added_quantity`
+- `merged_total_cost_paise = existing_total_cost_paise + (BigInt(added_quantity) * added_buy_price_paise)`
+- `derived_average_buy_price = Number(merged_total_cost_paise) / (Number(merged_quantity) * 100)`
+
+**Building height scaling curve**:
+- `normalized_height = min_height + (max_height - min_height) * (log10(invested_amount / 1000 + 1) / log10(max_investment / 1000 + 1))`
+Where `min_height = 2`, `max_height = 30`, and values are clamped within bounds. Floating point conversion occurs solely at this final visual projection step.
 
 ### Value sourcing
 

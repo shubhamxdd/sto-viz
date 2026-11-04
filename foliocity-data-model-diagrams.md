@@ -15,7 +15,7 @@ erDiagram
 
     SECURITIES {
         uuid id PK
-        varchar isin UK "12 char unique ISIN"
+        varchar isin UK "12 char uppercase ISIN"
         varchar company_name
         varchar sector "10 archetype categories"
         timestamptz created_at
@@ -109,7 +109,7 @@ flowchart TD
 
 ## 3. Public Sharing Privacy Projection Boundary
 
-To prevent viewers from discovering private holding sizes by dividing market values by public closing prices, individual holding rupee values and share counts are stripped at the server projection boundary.
+To prevent viewers from discovering private holding sizes by dividing market values by public closing prices, individual holding rupee values and share counts are stripped at the server projection boundary. Total rupee amounts are optionally shown only at the aggregate portfolio level, and suppressed if the portfolio contains only one stock.
 
 ```mermaid
 flowchart LR
@@ -129,7 +129,7 @@ flowchart LR
         DTO --> SName["Company Name & Ticker"]
         DTO --> SSector["Sector Architectural Style"]
         DTO --> SPct["Position Gain: +10 percent"]
-        DTO --> STotal["Optional Total Portfolio Sum (if opted in)"]
+        DTO --> STotal["Aggregate Portfolio Total (multi stock only)"]
         DTO -.-> Blocked["Never sent: quantity, total cost, or individual rupee amounts"]
     end
 
@@ -139,25 +139,25 @@ flowchart LR
 
 ## 4. Mathematical Valuation to 3D Scene Pipeline
 
-The diagram below traces how exact financial numbers map into procedural 3D building geometries and neon visual shaders without floating point inaccuracies.
+The diagram below traces how exact financial numbers in integer paise map into procedural 3D building geometries and neon visual shaders without floating point inaccuracies.
 
 ```mermaid
 flowchart TD
     subgraph DataInputs["Domain Inputs"]
         InpQty["Share Quantity (whole integer)"]
-        InpCost["Total Invested Cost (rupees)"]
-        InpPrice["Latest Closing Price (from Bhavcopy)"]
+        InpCost["Total Invested Cost in Paise (bigint)"]
+        InpPrice["Latest Closing Price in Paise (bigint)"]
         InpSector["Company Sector Classification"]
     end
 
-    subgraph ExactMath["Deterministic Financial Formulas"]
-        InpQty & InpCost --> BuyPriceCalc["Average Buy Price = total_cost / quantity"]
-        InpQty & InpPrice --> MarketValCalc["Current Value = quantity * latest_close_price"]
-        MarketValCalc & InpCost --> ProfitLossCalc["Profit or Loss = current_value - total_cost"]
-        ProfitLossCalc & InpCost --> PctCalc["Gain or Loss Pct = (Profit or Loss / total_cost) * 100"]
+    subgraph ExactMath["Deterministic Financial Formulas (Integer Paise)"]
+        InpQty & InpCost --> BuyPriceCalc["Average Buy Price = total_cost_paise / quantity"]
+        InpQty & InpPrice --> MarketValCalc["Current Value = quantity * close_price_paise"]
+        MarketValCalc & InpCost --> ProfitLossCalc["Profit or Loss = current_value - total_cost_paise"]
+        ProfitLossCalc & InpCost --> PctCalc["Basis Points = (Profit or Loss * 10000) / total_cost_paise"]
     end
 
-    subgraph Procedural3D["3D Visual Mapping"]
+    subgraph Procedural3D["3D Visual Mapping (Presentation Layer Only)"]
         InpCost --> HeightCalc["Logarithmic Height Curve: min 2 units, max 30 units"]
         PctCalc --> GlowColorCalc["Neon Shader Glow: Green/Cyan profit, Red/Magenta loss, Blue neutral"]
         InpSector --> MeshStyle["Architectural Model: Glass tower, Refinery, Clinic, Factory"]
