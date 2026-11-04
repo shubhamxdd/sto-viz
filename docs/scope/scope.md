@@ -52,7 +52,7 @@ Core entities every feature builds on: stocks, holdings, daily prices, user acco
   - [x] Relational Drizzle schema with foreign keys and check constraints (AC-1, AC-4, AC-6)
   - [x] Database migration and initial security seed script (AC-1, AC-6)
   - [x] Guest storage synchronization and share link projection filter (AC-7, AC-8)
-- [ ] Verify it: `/check verify data model`
+- [x] Verify it: `/check verify data model`
 - [ ] Test it: `/test data model`
 Spec [0002](../specs/0002-data-model.md) · code in src/domain/ and src/infrastructure/db/schema/
 
