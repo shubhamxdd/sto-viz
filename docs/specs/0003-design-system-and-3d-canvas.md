@@ -1,7 +1,7 @@
 # 0003. Design System and 3D Viewport Canvas
 
 **Date**: 2026-11-05
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -208,8 +208,8 @@ Ordered per the Skateboard build approach:
 
 ## Follow-up
 
-- [ ] Add cyberpunk color tokens to `src/app/globals.css`
-- [ ] Implement `src/presentation/stores/use-canvas-store.ts`
-- [ ] Build 3D canvas components in `src/presentation/components/canvas/`
-- [ ] Build HUD overlay and quality switcher in `src/presentation/components/ui/`
-- [ ] Integrate into `src/app/page.tsx` and verify with Vitest
+- [x] Add cyberpunk color tokens to `src/app/globals.css`
+- [x] Implement `src/presentation/stores/use-canvas-store.ts`
+- [x] Build 3D canvas components in `src/presentation/components/canvas/`
+- [x] Build HUD overlay and quality switcher in `src/presentation/components/ui/`
+- [x] Integrate into `src/app/page.tsx` and verify with Vitest

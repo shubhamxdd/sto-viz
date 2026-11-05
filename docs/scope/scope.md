@@ -60,17 +60,17 @@ Spec [0002](../specs/0002-data-model.md) · code in src/domain/ and src/infrastr
 Visual theme, dark palette, typography, responsive 3D viewport canvas, camera controls, and quality level switches.
 **Done when:** design guidelines cover color and typography, the 3D viewport renders smoothly with touch and mouse camera orbit, and quality presets adjust visual effects without errors.
 - [x] Design it (spec): `/architect design system and 3D canvas`
-- [ ] Build it: `/develop design system and 3D canvas`
-  - [ ] Cyberpunk design tokens, color palette, and typography (AC-1)
-  - [ ] Persistent canvas state store with quality presets (AC-6)
-  - [ ] Responsive 3D viewport canvas with Three.js and R3F (AC-2)
-  - [ ] Constrained camera orbit controls with damping and touch support (AC-3)
-  - [ ] Cyberpunk atmosphere, night lighting, distance fog, and floor grid (AC-4)
-  - [ ] Selective bloom postprocessing conditional on quality preset (AC-5)
-  - [ ] Glassmorphism HUD overlay with non-blocking pointer events (AC-7)
+- [x] Build it: `/develop design system and 3D canvas`
+  - [x] Cyberpunk design tokens, color palette, and typography (AC-1)
+  - [x] Persistent canvas state store with quality presets (AC-6)
+  - [x] Responsive 3D viewport canvas with Three.js and R3F (AC-2)
+  - [x] Constrained camera orbit controls with damping and touch support (AC-3)
+  - [x] Cyberpunk atmosphere, night lighting, distance fog, and floor grid (AC-4)
+  - [x] Selective bloom postprocessing conditional on quality preset (AC-5)
+  - [x] Glassmorphism HUD overlay with non-blocking pointer events (AC-7)
 - [ ] Verify it: `/check verify design system and 3D canvas`
 - [ ] Test it: `/test design system and 3D canvas`
-Spec [0003](../specs/0003-design-system-and-3d-canvas.md)
+Spec [0003](../specs/0003-design-system-and-3d-canvas.md) · code in src/presentation/ and src/app/
 
 ## Release 1: Local 3D city (skateboard)
 
