@@ -7,16 +7,6 @@
 
 This document establishes the cyberpunk visual design system, dark design tokens, and responsive 3D viewport canvas for FolioCity. The presentation layer renders a Three.js and React Three Fiber scene fixed behind a semi transparent user interface overlay, featuring atmospheric moonlight, distance fog, and selective neon bloom. A three tier quality preset system (High, Balanced, and Low) adapts postprocessing and pixel density across desktop graphics cards and mobile battery saving modes, coordinated through a persistent client side Zustand store.
 
-## Context
-
-FolioCity translates personal Indian equity portfolios into a cyberpunk 3D cityscape where building height reflects invested capital and neon glow conveys financial performance. Delivering an immersive visualization requires solving several technical and visual challenges simultaneously.
-
-First, standard 3D web applications often degrade severely on mobile devices or lower power laptops. Complex screen space postprocessing passes like bloom, high dynamic range rendering, and real time shadow cascades can quickly exhaust battery life or cause stuttering frame rates. The 3D canvas must incorporate explicit performance tiers so mobile visitors enjoy smooth sixty frame per second interaction while high performance desktop rigs display crisp neon glows.
-
-Second, the visual design system must balance intense cyberpunk aesthetics with financial legibility. Pure black backgrounds (#000000) create harsh contrast that strains eyes during portfolio review, while bright neon glows can bleed into numbers and distort information. The interface requires calibrated color tokens: deep night blue background tones (#030712), dark glassmorphism cards with backdrop blur, high contrast monospace typography for ticker symbols and percentage moves, and selective neon luminance thresholds so only accent trims glow.
-
-Third, camera navigation must remain intuitive across desktop mouse clicks and mobile touchscreen gestures. Unrestricted free orbit cameras frequently flip upside down or clip into the ground grid, causing disorientation. The camera requires constrained elevation angles, smooth momentum damping, bounded zoom distances, touch gesture handling, and automated idle rotation that gently showcases the skyline when users pause.
-
 ## Requirements
 
 **User stories**:
@@ -34,65 +24,13 @@ Third, camera navigation must remain intuitive across desktop mouse clicks and m
 - **AC-6**: Three tier graphics presets (High, Balanced, Low) adjust postprocessing passes, shadows, and device pixel ratio capping, persisting user selection in browser local storage.
 - **AC-7**: Glassmorphism user interface HUD overlays cleanly on top of the 3D canvas using non blocking pointer events, allowing transparent touch and click pass through to camera orbit controls.
 
-## Options considered
-
-### Option 1: Fullscreen Cyberpunk 3D Canvas with Selective Bloom and Three Tier Quality Presets
-
-A React Three Fiber canvas positioned fixed across the browser viewport behind transparent HTML/Tailwind HUD cards. The scene implements selective luminance bloom postprocessing with three switchable quality tiers (High, Balanced, Low), OrbitControls with polar elevation constraints, and atmospheric night fog.
-
-**Pros**:
-- Immersive visual presentation: the city serves as a living, glowing environment behind clean navigation overlays
-- Broad device compatibility: low power tier disables postprocessing and shadows, guaranteeing sixty frames per second on mobile
-- Focused neon glow: selective bloom threshold prevents text and facade washing
-- Reusable state store: Zustand coordinates graphics quality, camera reset triggers, and idle rotation smoothly
-
-**Cons**:
-- Slightly higher initial bundle size due to Three.js and postprocessing libraries (mitigated via Next.js dynamic client component loading)
-- Requires careful CSS pointer event management to allow 3D orbiting through empty overlay areas
-
-### Option 2: Embedded Viewport Card with Single Fixed Postprocessing Tier
-
-The 3D canvas is embedded inside a fixed size rectangular card in a traditional scrolling page, running fixed bloom and shadow effects at all times.
-
-**Pros**:
-- Simpler layout structure without fullscreen pointer event pass through
-- Familiar traditional dashboard card arrangement
-
-**Cons**:
-- Severely diminishes the visual immersion and emotional impact of viewing a city
-- Fixed postprocessing causes severe thermal throttling and battery drain on mobile phones
-- Narrow viewport restricts camera orbit exploration
-
-### Option 3: Lightweight CSS 3D Transforms with Flat SVG Overlays
-
-Rendering buildings as isometric CSS 3D boxes or flat SVG graphics instead of a WebGL Three.js canvas.
-
-**Pros**:
-- Negligible bundle size and very low battery consumption
-- Native HTML text rendering on building faces
-
-**Cons**:
-- Cannot achieve cyberpunk neon bloom, atmospheric fog, dynamic lighting, or realistic shadows
-- Inflexible camera orbit: CSS 3D transforms become glitchy and slow when managing hundreds of complex building meshes
-- Blocks future procedural shader animations and procedural sector meshes
-
 ## Decision
 
-**Chosen option**: Option 1: Fullscreen Cyberpunk 3D Canvas with Selective Bloom and Three Tier Quality Presets
+**Chosen option**: Fullscreen Cyberpunk 3D Canvas with Selective Bloom and Three Tier Quality Presets
 
-FolioCity will implement a fullscreen React Three Fiber canvas fixed behind glassmorphism HUD interface overlays. The scene uses constrained OrbitControls, cyberpunk night fog, directional moonlight, and selective luminance bloom across three distinct quality presets (High, Balanced, Low) persisted via Zustand.
+FolioCity implements a fullscreen React Three Fiber canvas fixed behind glassmorphism HUD interface overlays. The scene uses constrained OrbitControls, cyberpunk night fog, directional moonlight, and selective luminance bloom across three distinct quality presets (High, Balanced, Low) persisted via Zustand.
 
 **Implementation skills**: `r3f-fundamentals` (`EnzeD/r3f-skills`, `.agents/skills/r3f-fundamentals/`) · `r3f-lighting` (`EnzeD/r3f-skills`, `.agents/skills/r3f-lighting/`) · `r3f-postprocessing` (`EnzeD/r3f-skills`, `.agents/skills/r3f-postprocessing/`) · `shadcn` (`shadcn/ui`, `.agents/skills/shadcn/`)
-
-## Rationale
-
-Option 1 provides the exact balance of cyberpunk visual impact and multi device reliability required by FolioCity.
-
-Placing the 3D canvas across the fullscreen viewport creates an immersive skyline that makes portfolios exciting to explore and showcase. Glassmorphism interface overlays keep financial metrics and actions accessible while allowing the user to look through and manipulate the city underneath.
-
-The selective bloom pipeline solves the classic WebGL glow problem. By configuring the bloom pass with a high luminance threshold (0.85), only building rooftop antennas, neon signs, and window ribbons glow, while building facades and UI elements remain sharp and legible.
-
-The three tier quality architecture directly addresses mobile constraints. Desktop users on dedicated graphics cards get crisp antialiasing, dynamic shadows, and high pixel ratios. Mobile users can switch to the Low preset (or have it default on mobile), which strips heavy screen space shaders and shadows, preserving battery and guaranteeing smooth touch orbit interaction.
 
 ## Feature design
 
@@ -123,7 +61,7 @@ src/
 ### State transitions
 
 #### Quality preset states
-- `high`: DPR [1, 2], Shadows enabled (PCFSoft), EffectComposer enabled with Bloom and SMAA. Default on desktop devices with high performance GPUs.
+- `high`: DPR [1, 2], Shadows enabled (percentage/PCF), EffectComposer enabled with Bloom and SMAA. Default on desktop devices with high performance GPUs.
 - `balanced`: DPR [1, 1.5], Shadows disabled, EffectComposer enabled with Bloom, SMAA disabled. Ideal for laptops.
 - `low`: DPR 1.0, Shadows disabled, EffectComposer completely disabled, standard hardware antialiasing. Default on mobile devices to preserve battery.
 
@@ -148,7 +86,7 @@ src/
 |---|---|---|
 | Initialize canvas | Quality preset tier | Read from `localStorage` ('foliocity_quality_preset'), defaulting to device capability detection |
 | Render atmosphere | Background color | Token `#030712` defined in design system |
-| Render atmosphere | Distance fog | Color `#030712`, near distance 30 units, far distance 80 units |
+| Render atmosphere | Distance fog | Color `#030712`, near distance 25 units, far distance 80 units |
 | Render camera | Initial coordinates | Default perspective coordinates `[25, 20, 25]`, target `[0, 2, 0]` |
 | Render camera | Polar elevation limits | Minimum angle `Math.PI / 6` (30°), maximum angle `Math.PI / 2.5` (72°) |
 | Render neon bloom | Glow intensity and threshold | Selective bloom threshold 0.85, smoothing 0.1, intensity 1.4 |
@@ -190,21 +128,6 @@ Ordered per the Skateboard build approach:
 5. **Cyberpunk ground grid and effects**: Build `<CityGroundGrid>` and `<CityEffects>` with selective luminance bloom conditional on quality preset (satisfies AC-4, AC-5).
 6. **HUD overlay and Quality switcher**: Build `<QualitySwitcher>`, `<CameraToolbar>`, and `<GlassCard>` components with transparent pointer event layout pass through (satisfies AC-6, AC-7).
 7. **Smoke integration and testing**: Mount the 3D viewport onto the landing page `src/app/page.tsx` and write unit tests for the store and components (satisfies AC-2, AC-6).
-
-## Consequences
-
-**Positive**:
-- Establishes a distinct, polished cyberpunk aesthetic tailored specifically for financial visualization
-- Enables smooth 60fps operation on low power mobile devices through explicit quality presets
-- Constrained camera orbit prevents user disorientation and ground clipping
-- Non blocking HUD layout permits full screen 3D immersion while maintaining clean financial data review
-
-**Negative / tradeoffs**:
-- Initial page bundle includes Three.js and React Three Fiber libraries (approximately 150KB gzipped)
-- Postprocessing bloom requires WebGL2 support, gracefully bypassed in low quality mode
-
-**Neutral**:
-- Quality preference is stored per device in browser localStorage rather than synced to user cloud accounts
 
 ## Follow-up
 
