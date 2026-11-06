@@ -14,7 +14,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 1 | Stack and architecture | Foundation | done |
 | 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model | Foundation | done |
-| 4 | Design system and 3D canvas | Foundation | in-progress |
+| 4 | Design system and 3D canvas | Foundation | done |
 | 5 | Manual portfolio entry | Release 1 | planned |
 | 6 | Procedural 3D city visualizer | Release 1 | planned |
 | 7 | City interaction and holding details | Release 1 | planned |
@@ -56,7 +56,7 @@ Core entities every feature builds on: stocks, holdings, daily prices, user acco
 - [x] Test it: `/test data model`
 Spec [0002](../specs/0002-data-model.md) · code in src/domain/ and src/infrastructure/db/schema/
 
-### 4. Design system and 3D canvas · in-progress
+### 4. Design system and 3D canvas · done
 Visual theme, dark palette, typography, responsive 3D viewport canvas, camera controls, and quality level switches.
 **Done when:** design guidelines cover color and typography, the 3D viewport renders smoothly with touch and mouse camera orbit, and quality presets adjust visual effects without errors.
 - [x] Design it (spec): `/architect design system and 3D canvas`

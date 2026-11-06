@@ -1,7 +1,7 @@
 # 0003. Design System and 3D Viewport Canvas
 
 **Date**: 2026-11-05
-**Status**: In Progress
+**Status**: Accepted
 
 ## Summary
 
