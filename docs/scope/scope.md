@@ -15,7 +15,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model | Foundation | done |
 | 4 | Design system and 3D canvas | Foundation | done |
-| 5 | Manual portfolio entry | Release 1 | planned |
+| 5 | Manual portfolio entry | Release 1 | in-progress |
 | 6 | Procedural 3D city visualizer | Release 1 | planned |
 | 7 | City interaction and holding details | Release 1 | planned |
 | 8 | Curated demo cities | Release 1 | planned |
@@ -74,10 +74,19 @@ Spec [0003](../specs/0003-design-system-and-3d-canvas/index.md) · code in src/p
 
 ## Release 1: Local 3D city (skateboard)
 
-### 5. Manual portfolio entry · needs a decision
+### 5. Manual portfolio entry · in-progress
 Searchable NSE and BSE stock catalog, manual entry of buy price and quantity, editing and deletion, and automatic merging of duplicate purchases.
 **Done when:** visitors can search listed stocks, save holdings to browser local storage, and see duplicate purchases merged with weighted average buy prices.
-- [ ] Design it (spec): `/architect manual portfolio entry`
+- [x] Design it (spec): `/architect manual portfolio entry`
+- [ ] Build it: `/develop manual portfolio entry`
+  - [ ] Seeded securities catalog and client-side instant search index (AC-1, AC-2)
+  - [ ] Portfolio state store with localStorage persistence and Holding.merge() (AC-5, AC-7, AC-8)
+  - [ ] Real-time rupee currency input parsing to integer paise (AC-3, AC-4)
+  - [ ] Slide-over glass drawer, holdings list, and delete confirmation (AC-6, AC-7)
+  - [ ] HUD overlay integration with live valuation summary (AC-7, AC-8)
+- [ ] Verify it: `/check verify manual portfolio entry`
+- [ ] Test it: `/test manual portfolio entry`
+Spec [0004](../specs/0004-manual-portfolio-entry.md)
 
 ### 6. Procedural 3D city visualizer · needs a decision
 Generate a cyberpunk skyline where building height scales with invested money, neon glow reflects profit or loss percentage, and building style reflects company sector.
