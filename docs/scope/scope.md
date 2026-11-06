@@ -69,7 +69,7 @@ Visual theme, dark palette, typography, responsive 3D viewport canvas, camera co
   - [x] Selective bloom postprocessing conditional on quality preset (AC-5)
   - [x] Glassmorphism HUD overlay with non-blocking pointer events (AC-7)
 - [x] Verify it: `/check verify design system and 3D canvas`
-- [ ] Test it: `/test design system and 3D canvas`
+- [x] Test it: `/test design system and 3D canvas`
 Spec [0003](../specs/0003-design-system-and-3d-canvas/index.md) · code in src/presentation/ and src/app/
 
 ## Release 1: Local 3D city (skateboard)
