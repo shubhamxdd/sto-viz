@@ -84,7 +84,7 @@ Searchable NSE and BSE stock catalog, manual entry of buy price and quantity, ed
   - [x] Real-time rupee currency input parsing to integer paise (AC-3, AC-4)
   - [x] Slide-over glass drawer, holdings list, and delete confirmation (AC-6, AC-7)
   - [x] HUD overlay integration with live valuation summary (AC-7, AC-8)
-- [ ] Verify it: `/check verify manual portfolio entry`
+- [x] Verify it: `/check verify manual portfolio entry`
 - [ ] Test it: `/test manual portfolio entry`
 Spec [0004](../specs/0004-manual-portfolio-entry.md) · code in src/presentation/components/portfolio/
 
