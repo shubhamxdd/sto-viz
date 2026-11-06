@@ -1,7 +1,7 @@
 # 0004. Manual Portfolio Entry
 
 **Date**: 2026-11-06
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -211,9 +211,23 @@ Ordered per the Skateboard build approach:
 
 ## Follow-up
 
-- [ ] Bundle securities catalog for client search in `src/presentation/data/securities-catalog.ts`
-- [ ] Implement `src/presentation/stores/use-portfolio-store.ts` with Zustand and localStorage persistence
-- [ ] Build `<CurrencyInput />` component in `src/presentation/components/ui/currency-input.tsx`
-- [ ] Build holding drawer and list components in `src/presentation/components/portfolio/`
-- [ ] Integrate into `src/app/page.tsx` HUD
-- [ ] Write Vitest test suite for portfolio store and components
+- [x] Bundle securities catalog for client search in `src/presentation/data/securities-catalog.ts`
+- [x] Implement `src/presentation/stores/use-portfolio-store.ts` with Zustand and localStorage persistence
+- [x] Build `<CurrencyInput />` component in `src/presentation/components/ui/currency-input.tsx`
+- [x] Build holding drawer and list components in `src/presentation/components/portfolio/`
+- [x] Integrate into `src/app/page.tsx` HUD
+- [x] Write Vitest test suite for portfolio store and components
+
+## Verification steps
+
+To verify manual portfolio entry:
+
+1. Run the development server with `npm run dev` and open `http://localhost:3000` in your browser.
+2. In the HUD overlay, click the `Add Stock` button in the left holdings card or the top navigation bar.
+3. In the search input, type `Reliance` or `INE002A01018`. Verify that Reliance Industries Limited appears in the search dropdown (verifies AC-1).
+4. Select Reliance Industries Limited and toggle between `NSE` and `BSE` pills. Verify the exchange badge toggles cleanly (verifies AC-2).
+5. Enter a quantity of `10` and a buy price of `2500`. Verify that the currency input formats automatically with the rupee symbol (verifies AC-3, AC-4).
+6. Click `Add to Portfolio`. Verify that a toast notification appears and the new holding renders in the holdings list with total invested capital of ₹25,000 (verifies AC-3, AC-8).
+7. Click `Add Stock` again, select Reliance Industries Limited on the same exchange, enter quantity `10` and buy price `3500`, then click `Add to Portfolio`. Verify that the duplicate holding is merged automatically into 20 shares at an average price of ₹3,000 (verifies AC-5).
+8. Click the edit button on the holding card, change the quantity to `25`, and save. Verify the holding updates cleanly. Click the delete button, confirm the dialog, and verify the holding is removed (verifies AC-6).
+9. Refresh the browser page and verify that the portfolio state persists cleanly from browser storage (verifies AC-7).

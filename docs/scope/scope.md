@@ -78,15 +78,15 @@ Spec [0003](../specs/0003-design-system-and-3d-canvas/index.md) · code in src/p
 Searchable NSE and BSE stock catalog, manual entry of buy price and quantity, editing and deletion, and automatic merging of duplicate purchases.
 **Done when:** visitors can search listed stocks, save holdings to browser local storage, and see duplicate purchases merged with weighted average buy prices.
 - [x] Design it (spec): `/architect manual portfolio entry`
-- [ ] Build it: `/develop manual portfolio entry`
-  - [ ] Seeded securities catalog and client-side instant search index (AC-1, AC-2)
-  - [ ] Portfolio state store with localStorage persistence and Holding.merge() (AC-5, AC-7, AC-8)
-  - [ ] Real-time rupee currency input parsing to integer paise (AC-3, AC-4)
-  - [ ] Slide-over glass drawer, holdings list, and delete confirmation (AC-6, AC-7)
-  - [ ] HUD overlay integration with live valuation summary (AC-7, AC-8)
+- [x] Build it: `/develop manual portfolio entry`
+  - [x] Seeded securities catalog and client-side instant search index (AC-1, AC-2)
+  - [x] Portfolio state store with localStorage persistence and Holding.merge() (AC-5, AC-7, AC-8)
+  - [x] Real-time rupee currency input parsing to integer paise (AC-3, AC-4)
+  - [x] Slide-over glass drawer, holdings list, and delete confirmation (AC-6, AC-7)
+  - [x] HUD overlay integration with live valuation summary (AC-7, AC-8)
 - [ ] Verify it: `/check verify manual portfolio entry`
 - [ ] Test it: `/test manual portfolio entry`
-Spec [0004](../specs/0004-manual-portfolio-entry.md)
+Spec [0004](../specs/0004-manual-portfolio-entry.md) · code in src/presentation/components/portfolio/
 
 ### 6. Procedural 3D city visualizer · needs a decision
 Generate a cyberpunk skyline where building height scales with invested money, neon glow reflects profit or loss percentage, and building style reflects company sector.

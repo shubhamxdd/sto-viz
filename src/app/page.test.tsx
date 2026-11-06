@@ -32,17 +32,11 @@ describe("HomePage Component", () => {
     expect(screen.getByRole("button", { name: /low/i })).toBeDefined();
   });
 
-  it("displays the cyberpunk 3D skyline welcome card and invariants", () => {
+  it("displays the active holdings panel with Add Stock button", () => {
     render(<HomePage />);
 
-    const heading = screen.getByRole("heading", {
-      level: 1,
-      name: /cyberpunk 3d skyline/i,
-    });
-    expect(heading).toBeDefined();
-
-    expect(screen.getByText(/30° to 72° Elevation/i)).toBeDefined();
-    expect(screen.getByText(/0.85 Luminance/i)).toBeDefined();
+    expect(screen.getByText(/active holdings/i)).toBeDefined();
+    expect(screen.getByRole("button", { name: /add stock/i })).toBeDefined();
     expect(
       screen.getByText(/drag to orbit · scroll to zoom · bounded camera/i),
     ).toBeDefined();
