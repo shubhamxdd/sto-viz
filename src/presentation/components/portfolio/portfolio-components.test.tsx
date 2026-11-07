@@ -190,5 +190,140 @@ describe("Portfolio Components", () => {
       );
       expect(usePortfolioStore.getState().holdings.length).toBe(1);
     });
+
+    it("displays validation error when attempting to submit without selecting a security", () => {
+      usePortfolioStore.setState({
+        isDrawerOpen: true,
+        editingHoldingId: null,
+      });
+      const handleNotify = vi.fn();
+
+      render(<HoldingDrawer onNotify={handleNotify} />);
+
+      const submitBtn = screen.getByRole("button", {
+        name: /add to portfolio/i,
+      });
+      fireEvent.click(submitBtn);
+
+      expect(
+        screen.getByText(/please select a listed indian stock/i),
+      ).toBeDefined();
+      expect(handleNotify).not.toHaveBeenCalled();
+    });
+
+    it("displays validation error when submitting with zero buy price", () => {
+      usePortfolioStore.setState({
+        isDrawerOpen: true,
+        editingHoldingId: null,
+      });
+      const handleNotify = vi.fn();
+
+      render(<HoldingDrawer onNotify={handleNotify} />);
+
+      const searchInput = screen.getByPlaceholderText(
+        /search by ticker, company, or isin/i,
+      );
+      fireEvent.change(searchInput, { target: { value: "TCS" } });
+      const option = screen.getByText("Tata Consultancy Services Limited");
+      fireEvent.click(option);
+
+      const submitBtn = screen.getByRole("button", {
+        name: /add to portfolio/i,
+      });
+      fireEvent.click(submitBtn);
+
+      expect(
+        screen.getByText(/buy price must be greater than ₹0.00/i),
+      ).toBeDefined();
+    });
+
+    it("prefills existing holding values in edit mode and updates holding", () => {
+      usePortfolioStore.setState({
+        isDrawerOpen: true,
+        editingHoldingId: "hold_infy_edit",
+        holdings: [
+          {
+            id: "hold_infy_edit",
+            securityId: "sec_infosys",
+            isin: "INE009A01021",
+            symbol: "INFY",
+            exchange: "NSE",
+            companyName: "Infosys Limited",
+            sector: "IT and Technology",
+            quantity: 10,
+            buyPricePaise: "150000",
+            totalCostPaise: "1500000",
+            purchasedAt: "2026-11-06",
+            updatedAt: "2026-11-06T12:00:00Z",
+          },
+        ],
+      });
+      const handleNotify = vi.fn();
+
+      render(<HoldingDrawer onNotify={handleNotify} />);
+
+      expect(screen.getByText("Edit Stock Holding")).toBeDefined();
+
+      const qtyInput = screen.getByLabelText(/number of shares/i);
+      fireEvent.change(qtyInput, { target: { value: "25" } });
+
+      const updateBtn = screen.getByRole("button", {
+        name: /save changes/i,
+      });
+      fireEvent.click(updateBtn);
+
+      expect(handleNotify).toHaveBeenCalledWith("Updated INFY holding");
+      const updatedHolding = usePortfolioStore
+        .getState()
+        .holdings.find((h) => h.id === "hold_infy_edit");
+      expect(updatedHolding?.quantity).toBe(25);
+    });
+
+    it("merges lots and displays merged notification when adding existing security", () => {
+      usePortfolioStore.setState({
+        isDrawerOpen: true,
+        editingHoldingId: null,
+        holdings: [
+          {
+            id: "hold_infy_existing",
+            securityId: "sec_infosys",
+            isin: "INE009A01021",
+            symbol: "INFY",
+            exchange: "NSE",
+            companyName: "Infosys Limited",
+            sector: "IT and Technology",
+            quantity: 10,
+            buyPricePaise: "150000",
+            totalCostPaise: "1500000",
+            purchasedAt: "2026-11-06",
+            updatedAt: "2026-11-06T12:00:00Z",
+          },
+        ],
+      });
+      const handleNotify = vi.fn();
+
+      render(<HoldingDrawer onNotify={handleNotify} />);
+
+      const searchInput = screen.getByPlaceholderText(
+        /search by ticker, company, or isin/i,
+      );
+      fireEvent.change(searchInput, { target: { value: "Infosys" } });
+      const option = screen.getByText("Infosys Limited");
+      fireEvent.click(option);
+
+      const priceInput = screen.getByLabelText(/buy price/i);
+      fireEvent.change(priceInput, { target: { value: "2500" } });
+
+      const submitBtn = screen.getByRole("button", {
+        name: /add to portfolio/i,
+      });
+      fireEvent.click(submitBtn);
+
+      expect(handleNotify).toHaveBeenCalledWith(
+        expect.stringContaining("Merged with existing INFY holding"),
+      );
+      expect(usePortfolioStore.getState().holdings.length).toBe(1);
+      expect(usePortfolioStore.getState().holdings[0].quantity).toBe(20);
+    });
   });
 });

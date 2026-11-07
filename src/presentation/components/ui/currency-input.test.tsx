@@ -50,4 +50,51 @@ describe("CurrencyInput Component", () => {
 
     expect(handleChange).toHaveBeenCalledWith(0n);
   });
+
+  it("blocks non-numeric input characters", () => {
+    const handleChange = vi.fn();
+    render(
+      <CurrencyInput
+        label="Buy Price"
+        valuePaise={10000n}
+        onChangePaise={handleChange}
+      />,
+    );
+
+    const input = screen.getByLabelText("Buy Price") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "abc" } });
+
+    // Value should not update to invalid string
+    expect(input.value).toBe("100.00");
+    expect(handleChange).not.toHaveBeenCalled();
+  });
+
+  it("displays external error message when provided", () => {
+    const handleChange = vi.fn();
+    render(
+      <CurrencyInput
+        label="Buy Price"
+        valuePaise={0n}
+        onChangePaise={handleChange}
+        error="Price must exceed zero"
+      />,
+    );
+
+    expect(screen.getByText("Price must exceed zero")).toBeDefined();
+  });
+
+  it("applies disabled state to input field", () => {
+    const handleChange = vi.fn();
+    render(
+      <CurrencyInput
+        label="Buy Price"
+        valuePaise={10000n}
+        onChangePaise={handleChange}
+        disabled={true}
+      />,
+    );
+
+    const input = screen.getByLabelText("Buy Price") as HTMLInputElement;
+    expect(input.disabled).toBe(true);
+  });
 });

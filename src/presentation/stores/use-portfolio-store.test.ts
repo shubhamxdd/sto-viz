@@ -155,4 +155,41 @@ describe("usePortfolioStore", () => {
     expect(usePortfolioStore.getState().isDrawerOpen).toBe(false);
     expect(usePortfolioStore.getState().editingHoldingId).toBeNull();
   });
+
+  it("normalizes non-positive quantities to at least 1 share", () => {
+    act(() => {
+      usePortfolioStore.getState().addHolding({
+        securityId: "sec_tcs",
+        isin: "INE467B01029",
+        symbol: "TCS",
+        exchange: "NSE",
+        companyName: "Tata Consultancy Services Limited",
+        sector: "IT and Technology",
+        quantity: -5,
+        buyPricePaise: "350000",
+      });
+    });
+
+    const holdings = usePortfolioStore.getState().holdings;
+    expect(holdings[0].quantity).toBe(1);
+    expect(holdings[0].totalCostPaise).toBe("350000");
+  });
+
+  it("handles non-existent holding id in updateHolding gracefully without throwing", () => {
+    expect(() => {
+      act(() => {
+        usePortfolioStore.getState().updateHolding("non_existent_id", {
+          quantity: 20,
+          buyPricePaise: "100000",
+        });
+      });
+    }).not.toThrow();
+  });
+
+  it("returns zero metrics and empty sector breakdown for empty portfolio", () => {
+    const state = usePortfolioStore.getState();
+    expect(state.getTotalInvestedPaise()).toBe(0n);
+    expect(state.getTotalQuantity()).toBe(0);
+    expect(state.getSectorBreakdown()).toEqual([]);
+  });
 });

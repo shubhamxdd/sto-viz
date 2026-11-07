@@ -85,7 +85,7 @@ Searchable NSE and BSE stock catalog, manual entry of buy price and quantity, ed
   - [x] Slide-over glass drawer, holdings list, and delete confirmation (AC-6, AC-7)
   - [x] HUD overlay integration with live valuation summary (AC-7, AC-8)
 - [x] Verify it: `/check verify manual portfolio entry`
-- [ ] Test it: `/test manual portfolio entry`
+- [x] Test it: `/test manual portfolio entry`
 Spec [0004](../specs/0004-manual-portfolio-entry.md) · code in src/presentation/components/portfolio/
 
 ### 6. Procedural 3D city visualizer · needs a decision
