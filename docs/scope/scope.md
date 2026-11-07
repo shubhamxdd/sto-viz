@@ -15,7 +15,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 2 | Coding standards and tooling | Foundation | done |
 | 3 | Data model | Foundation | done |
 | 4 | Design system and 3D canvas | Foundation | done |
-| 5 | Manual portfolio entry | Release 1 | in-progress |
+| 5 | Manual portfolio entry | Release 1 | done |
 | 6 | Procedural 3D city visualizer | Release 1 | planned |
 | 7 | City interaction and holding details | Release 1 | planned |
 | 8 | Curated demo cities | Release 1 | planned |
@@ -74,7 +74,7 @@ Spec [0003](../specs/0003-design-system-and-3d-canvas/index.md) · code in src/p
 
 ## Release 1: Local 3D city (skateboard)
 
-### 5. Manual portfolio entry · in-progress
+### 5. Manual portfolio entry · done
 Searchable NSE and BSE stock catalog, manual entry of buy price and quantity, editing and deletion, and automatic merging of duplicate purchases.
 **Done when:** visitors can search listed stocks, save holdings to browser local storage, and see duplicate purchases merged with weighted average buy prices.
 - [x] Design it (spec): `/architect manual portfolio entry`
