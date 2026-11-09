@@ -89,13 +89,32 @@ describe("useCanvasStore", () => {
     expect(useCanvasStore.getState().selectedHoldingId).toBeNull();
 
     act(() => {
-      useCanvasStore.getState().setSelectedHoldingId("holding_123");
+      useCanvasStore
+        .getState()
+        .setSelectedHoldingId("holding_123", [10, 5, -8]);
     });
     expect(useCanvasStore.getState().selectedHoldingId).toBe("holding_123");
+    expect(useCanvasStore.getState().selectedPlotPosition).toEqual([10, 5, -8]);
+    expect(useCanvasStore.getState().isAutoRotating).toBe(false);
 
     act(() => {
       useCanvasStore.getState().setSelectedHoldingId(null);
     });
     expect(useCanvasStore.getState().selectedHoldingId).toBeNull();
+    expect(useCanvasStore.getState().selectedPlotPosition).toBeNull();
+  });
+
+  it("manages valuation display mode toggle between currency and percentage", () => {
+    expect(useCanvasStore.getState().displayMode).toBe("currency");
+
+    act(() => {
+      useCanvasStore.getState().toggleDisplayMode();
+    });
+    expect(useCanvasStore.getState().displayMode).toBe("percentage");
+
+    act(() => {
+      useCanvasStore.getState().setDisplayMode("currency");
+    });
+    expect(useCanvasStore.getState().displayMode).toBe("currency");
   });
 });

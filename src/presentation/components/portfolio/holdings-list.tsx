@@ -2,7 +2,8 @@
 
 import { Edit2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { formatPaiseToRupees } from "@/domain/services/currency-parser";
+import { formatPaiseWithPrivacy } from "@/domain/services/currency-parser";
+import { useCanvasStore } from "../../stores/use-canvas-store";
 import {
   type PortfolioHolding,
   usePortfolioStore,
@@ -21,6 +22,8 @@ export function HoldingsList({ onNotify }: HoldingsListProps) {
   const getTotalInvestedPaise = usePortfolioStore(
     (state) => state.getTotalInvestedPaise,
   );
+  const displayMode = useCanvasStore((state) => state.displayMode);
+  const isPrivacyMode = displayMode === "percentage";
 
   const [deletingHolding, setDeletingHolding] =
     useState<PortfolioHolding | null>(null);
@@ -45,7 +48,7 @@ export function HoldingsList({ onNotify }: HoldingsListProps) {
               Active Holdings ({holdings.length})
             </span>
             <div className="font-mono text-lg font-bold text-white">
-              {formatPaiseToRupees(totalInvested)}
+              {formatPaiseWithPrivacy(totalInvested, isPrivacyMode)}
             </div>
           </div>
 
@@ -78,11 +81,13 @@ export function HoldingsList({ onNotify }: HoldingsListProps) {
         ) : (
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {holdings.map((holding) => {
-              const holdingCost = formatPaiseToRupees(
+              const holdingCost = formatPaiseWithPrivacy(
                 BigInt(holding.totalCostPaise),
+                isPrivacyMode,
               );
-              const unitPrice = formatPaiseToRupees(
+              const unitPrice = formatPaiseWithPrivacy(
                 BigInt(holding.buyPricePaise),
+                isPrivacyMode,
               );
 
               return (

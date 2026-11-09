@@ -5,6 +5,7 @@ import {
 } from "@/domain/errors/domain-error";
 import {
   formatPaiseToRupees,
+  formatPaiseWithPrivacy,
   parseRupeesToPaise,
   quantizePaiseToThousandRupees,
 } from "./currency-parser";
@@ -77,6 +78,31 @@ describe("currency-parser", () => {
 
       // 1,000 rupees exactly
       expect(quantizePaiseToThousandRupees(100000n)).toBe("₹1,000");
+    });
+  });
+
+  describe("formatPaiseWithPrivacy", () => {
+    it("returns masked rupee string when privacy mode is active", () => {
+      expect(formatPaiseWithPrivacy(250000n, true)).toBe("₹ ••••••");
+      expect(formatPaiseWithPrivacy(250000n, true, { showSign: true })).toBe(
+        "+₹ ••••••",
+      );
+      expect(formatPaiseWithPrivacy(-150000n, true, { showSign: true })).toBe(
+        "-₹ ••••••",
+      );
+      expect(formatPaiseWithPrivacy(0n, true, { showSign: true })).toBe(
+        "₹ ••••••",
+      );
+    });
+
+    it("returns formatted rupee string when privacy mode is inactive", () => {
+      expect(formatPaiseWithPrivacy(250000n, false)).toBe("₹2,500.00");
+      expect(formatPaiseWithPrivacy(250000n, false, { showSign: true })).toBe(
+        "+₹2,500.00",
+      );
+      expect(formatPaiseWithPrivacy(-150000n, false, { showSign: true })).toBe(
+        "-₹1,500.00",
+      );
     });
   });
 });

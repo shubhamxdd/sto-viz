@@ -152,3 +152,38 @@ export function calculateBuildingHeight(
 
   return Math.min(Math.max(calculatedHeight, minHeight), maxHeight);
 }
+
+export interface SimulatedHoldingValuation {
+  currentValuationPaise: bigint;
+  unrealizedPnlPaise: bigint;
+  returnPercentage: number;
+}
+
+/**
+ * Calculates simulated valuation and unrealized profit or loss in paise
+ * from a cost basis and a percentage return.
+ * Uses integer paise arithmetic and standard rounding.
+ */
+export function calculateSimulatedValuation(
+  costBasisPaise: bigint,
+  returnPercentage: number,
+): SimulatedHoldingValuation {
+  if (costBasisPaise <= 0n) {
+    return {
+      currentValuationPaise: 0n,
+      unrealizedPnlPaise: 0n,
+      returnPercentage,
+    };
+  }
+
+  const currentValuationPaise = BigInt(
+    Math.round(Number(costBasisPaise) * (1 + returnPercentage / 100)),
+  );
+  const unrealizedPnlPaise = currentValuationPaise - costBasisPaise;
+
+  return {
+    currentValuationPaise,
+    unrealizedPnlPaise,
+    returnPercentage,
+  };
+}

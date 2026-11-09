@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useCanvasStore } from "../../stores/use-canvas-store";
 import { usePortfolioStore } from "../../stores/use-portfolio-store";
 import { calculateCityLayout } from "./city-layout";
 import { ConstructionBeacon } from "./construction-beacon";
@@ -16,8 +17,9 @@ interface CityBuildingsProps {
  */
 export function CityBuildings({ onSelectHolding }: CityBuildingsProps) {
   const holdings = usePortfolioStore((state) => state.holdings);
-  const [selectedHoldingId, setSelectedHoldingId] = useState<string | null>(
-    null,
+  const selectedHoldingId = useCanvasStore((state) => state.selectedHoldingId);
+  const setSelectedHoldingId = useCanvasStore(
+    (state) => state.setSelectedHoldingId,
   );
 
   const plots = useMemo(() => {
@@ -26,7 +28,10 @@ export function CityBuildings({ onSelectHolding }: CityBuildingsProps) {
 
   const handleSelect = (holdingId: string) => {
     const nextId = selectedHoldingId === holdingId ? null : holdingId;
-    setSelectedHoldingId(nextId);
+    const targetPlot = nextId
+      ? plots.find((p) => p.holdingId === nextId)
+      : null;
+    setSelectedHoldingId(nextId, targetPlot ? targetPlot.position : null);
     onSelectHolding?.(nextId);
   };
 

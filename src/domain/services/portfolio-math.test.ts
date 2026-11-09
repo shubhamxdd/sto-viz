@@ -3,6 +3,7 @@ import {
   calculateBuildingHeight,
   calculateHoldingValuation,
   calculatePortfolioValuationSummary,
+  calculateSimulatedValuation,
   mergeHoldingPurchases,
 } from "./portfolio-math";
 
@@ -108,6 +109,30 @@ describe("portfolio-math", () => {
       // Values above max cap out at maxHeight (30)
       const hAbove = calculateBuildingHeight(5000000000n);
       expect(hAbove).toBe(30);
+    });
+  });
+
+  describe("calculateSimulatedValuation", () => {
+    it("calculates current valuation and profit with positive returns", () => {
+      // ₹1,000 cost (100,000 paise) with +15% return -> ₹1,150 (115,000 paise)
+      const res = calculateSimulatedValuation(100000n, 15);
+      expect(res.currentValuationPaise).toBe(115000n);
+      expect(res.unrealizedPnlPaise).toBe(15000n);
+      expect(res.returnPercentage).toBe(15);
+    });
+
+    it("calculates current valuation and loss with negative returns", () => {
+      // ₹1,000 cost (100,000 paise) with -10% return -> ₹900 (90,000 paise)
+      const res = calculateSimulatedValuation(100000n, -10);
+      expect(res.currentValuationPaise).toBe(90000n);
+      expect(res.unrealizedPnlPaise).toBe(-10000n);
+      expect(res.returnPercentage).toBe(-10);
+    });
+
+    it("handles zero cost basis safely", () => {
+      const res = calculateSimulatedValuation(0n, 12.5);
+      expect(res.currentValuationPaise).toBe(0n);
+      expect(res.unrealizedPnlPaise).toBe(0n);
     });
   });
 });

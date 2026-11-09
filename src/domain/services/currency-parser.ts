@@ -53,6 +53,31 @@ export function formatPaiseToRupees(paise: bigint): string {
 }
 
 /**
+ * Formats an integer paise value with optional privacy masking.
+ * When isPrivacyMode is true, returns '₹ ••••••' (or with sign '+₹ ••••••' / '-₹ ••••••' if showSign is true).
+ */
+export function formatPaiseWithPrivacy(
+  paise: bigint,
+  isPrivacyMode: boolean,
+  options?: { showSign?: boolean },
+): string {
+  if (isPrivacyMode) {
+    if (options?.showSign) {
+      if (paise > 0n) return "+₹ ••••••";
+      if (paise < 0n) return "-₹ ••••••";
+      return "₹ ••••••";
+    }
+    return "₹ ••••••";
+  }
+
+  const formatted = formatPaiseToRupees(paise);
+  if (options?.showSign && paise > 0n) {
+    return `+${formatted}`;
+  }
+  return formatted;
+}
+
+/**
  * Quantizes integer paise to the nearest thousand rupees for public share views.
  * Eliminates algebraic deduction of individual holdings.
  */

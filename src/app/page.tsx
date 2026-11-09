@@ -3,8 +3,10 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import {
+  HoldingDetailsCard,
   HoldingDrawer,
   HoldingsList,
+  SummaryBar,
 } from "../presentation/components/portfolio";
 import { CameraToolbar } from "../presentation/components/ui/camera-toolbar";
 import { QualitySwitcher } from "../presentation/components/ui/quality-switcher";
@@ -48,7 +50,7 @@ export default function HomePage() {
       <div className="pointer-events-none relative z-10 flex min-h-screen flex-col justify-between p-4 sm:p-6">
         {/* Top Navigation Bar */}
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="pointer-events-auto flex items-center gap-3">
+          <div className="pointer-events-auto flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-slate-950/70 px-3.5 py-2 backdrop-blur-md">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
@@ -62,6 +64,8 @@ export default function HomePage() {
                 METROPOLIS
               </span>
             </div>
+
+            <SummaryBar />
           </div>
 
           {/* Interactive Toolbars */}
@@ -74,6 +78,11 @@ export default function HomePage() {
         {/* Center / Left Active Holdings Panel */}
         <div className="my-auto max-w-md sm:max-w-lg">
           <HoldingsList onNotify={handleNotify} />
+        </div>
+
+        {/* Floating Holding Details Card in bottom right (pointer-events-auto) */}
+        <div className="pointer-events-auto fixed bottom-14 right-4 sm:bottom-16 sm:right-6 z-20 max-w-sm sm:max-w-md w-full">
+          <HoldingDetailsCard onNotify={handleNotify} />
         </div>
 
         {/* Bottom HUD Bar & Notification Toast */}
