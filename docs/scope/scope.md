@@ -16,7 +16,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 3 | Data model | Foundation | done |
 | 4 | Design system and 3D canvas | Foundation | done |
 | 5 | Manual portfolio entry | Release 1 | done |
-| 6 | Procedural 3D city visualizer | Release 1 | in-progress |
+| 6 | Procedural 3D city visualizer | Release 1 | done |
 | 7 | City interaction and holding details | Release 1 | planned |
 | 8 | Curated demo cities | Release 1 | planned |
 | 9 | CSV holdings import | Release 2 | planned |
@@ -88,7 +88,7 @@ Searchable NSE and BSE stock catalog, manual entry of buy price and quantity, ed
 - [x] Test it: `/test manual portfolio entry`
 Spec [0004](../specs/0004-manual-portfolio-entry.md) · code in src/presentation/components/portfolio/
 
-### 6. Procedural 3D city visualizer · in-progress
+### 6. Procedural 3D city visualizer · done
 Generate a cyberpunk skyline where building height scales with invested money, neon glow reflects profit or loss percentage, and building style reflects company sector.
 **Done when:** each holding renders as a distinct procedural 3D building matching its sector style, with height reflecting invested capital and neon shaders signaling profit or loss.
 - [x] Design it (spec): `/architect procedural 3D city visualizer`
@@ -98,8 +98,8 @@ Generate a cyberpunk skyline where building height scales with invested money, n
   - [x] Procedural building component with neon trim shaders and hover interaction (AC-3, AC-5, AC-6, AC-8)
   - [x] Holographic construction beacon for empty portfolio state (AC-7)
   - [x] Canvas scene integration replacing static monolith (AC-1, AC-7)
-- [ ] Verify it: `/check verify procedural 3D city visualizer`
-- [ ] Test it: `/test procedural 3D city visualizer`
+- [x] Verify it: `/check verify procedural 3D city visualizer`
+- [x] Test it: `/test procedural 3D city visualizer`
 Spec [0005](../specs/0005-procedural-3d-city-visualizer.md) · code in src/presentation/components/canvas/
 
 ### 7. City interaction and holding details

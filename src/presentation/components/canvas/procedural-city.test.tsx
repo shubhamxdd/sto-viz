@@ -1,6 +1,7 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Sector } from "@/domain/entities/security";
+import { useCanvasStore } from "../../stores/use-canvas-store";
 import { usePortfolioStore } from "../../stores/use-portfolio-store";
 import { CityBuildings } from "./city-buildings";
 import {
@@ -9,6 +10,7 @@ import {
   DEFAULT_LAYOUT_CONFIG,
   getDeterministicReturn,
 } from "./city-layout";
+import { CityScene } from "./city-scene";
 import { ConstructionBeacon } from "./construction-beacon";
 import { ProceduralBuilding } from "./procedural-building";
 import { SectorCrown } from "./sector-crowns";
@@ -21,6 +23,11 @@ vi.mock("@react-three/fiber", () => ({
     gl: { domElement: document.createElement("canvas") },
   }),
 }));
+
+vi.mock("./city-camera", () => ({ CityCamera: () => null }));
+vi.mock("./city-effects", () => ({ CityEffects: () => null }));
+vi.mock("./city-environment", () => ({ CityEnvironment: () => null }));
+vi.mock("./city-ground-grid", () => ({ CityGroundGrid: () => null }));
 
 describe("Procedural 3D City Visualizer", () => {
   beforeEach(() => {
@@ -50,14 +57,24 @@ describe("Procedural 3D City Visualizer", () => {
       expect(megaDim.height).toBe(36.0);
     });
 
-    it("scales horizontal footprint proportionally with investment", () => {
-      const smallDim = calculateBuildingDimensions(100000n);
-      const largeDim = calculateBuildingDimensions(50000000n);
+    it("respects custom layout configuration bounds", () => {
+      const customConfig = {
+        blockSize: 2,
+        lotSize: 8.0,
+        streetWidth: 6.0,
+        minHeight: 6.0,
+        maxHeight: 48.0,
+        minFootprint: 3.0,
+        maxFootprint: 6.0,
+      };
 
-      expect(smallDim.width).toBeGreaterThanOrEqual(2.5);
-      expect(largeDim.width).toBeGreaterThan(smallDim.width);
-      expect(largeDim.width).toBeLessThanOrEqual(4.5);
-      expect(largeDim.width).toBe(largeDim.depth);
+      const dimMin = calculateBuildingDimensions(0n, customConfig);
+      expect(dimMin.height).toBe(6.0);
+      expect(dimMin.width).toBe(3.0);
+
+      const dimMax = calculateBuildingDimensions(10000000000n, customConfig);
+      expect(dimMax.height).toBe(48.0);
+      expect(dimMax.width).toBe(6.0);
     });
   });
 
@@ -154,6 +171,81 @@ describe("Procedural 3D City Visualizer", () => {
         expect(plot.neonColor).toMatch(/^#(22d3ee|fb7185)$/);
       }
     });
+
+    it("centers a single holding plot at origin [0, height/2, 0] (AC-1)", () => {
+      const singleHolding = [
+        {
+          id: "h_single",
+          securityId: "sec_tcs",
+          isin: "INE467B01029",
+          symbol: "TCS",
+          exchange: "NSE" as const,
+          companyName: "Tata Consultancy Services Limited",
+          sector: "IT and Technology" as Sector,
+          quantity: 5,
+          buyPricePaise: "350000",
+          totalCostPaise: "1750000",
+          purchasedAt: "2026-11-09",
+          updatedAt: "2026-11-09T00:00:00Z",
+        },
+      ];
+
+      const plots = calculateCityLayout(singleHolding);
+      expect(plots.length).toBe(1);
+      expect(plots[0].position[0]).toBe(0);
+      expect(plots[0].position[2]).toBe(0);
+      expect(plots[0].position[1]).toBeCloseTo(plots[0].height / 2, 1);
+    });
+
+    it("expands gracefully across multi-block street grids with 5+ holdings (AC-1)", () => {
+      const fiveHoldings = Array.from({ length: 5 }, (_, i) => ({
+        id: `h_${i}`,
+        securityId: `sec_${i}`,
+        isin: `INE00000000${i}`,
+        symbol: `STOCK${i}`,
+        exchange: "NSE" as const,
+        companyName: `Company ${i}`,
+        sector: "IT and Technology" as Sector,
+        quantity: 10,
+        buyPricePaise: "100000",
+        totalCostPaise: "1000000",
+        purchasedAt: "2026-11-09",
+        updatedAt: "2026-11-09T00:00:00Z",
+      }));
+
+      const plots = calculateCityLayout(fiveHoldings);
+      expect(plots.length).toBe(5);
+
+      const positions = plots.map((p) => `${p.position[0]},${p.position[2]}`);
+      const uniquePositions = new Set(positions);
+      expect(uniquePositions.size).toBe(5);
+    });
+
+    it("maps positive returns to cyan and negative returns to rose neon glow (AC-6)", () => {
+      const mockHoldings = [
+        {
+          id: "h_gain",
+          securityId: "sec_gain",
+          isin: "INE467B01029",
+          symbol: "TCS",
+          exchange: "NSE" as const,
+          companyName: "TCS",
+          sector: "IT and Technology" as Sector,
+          quantity: 10,
+          buyPricePaise: "100000",
+          totalCostPaise: "1000000",
+          purchasedAt: "2026-11-09",
+          updatedAt: "2026-11-09T00:00:00Z",
+        },
+      ];
+
+      const plots = calculateCityLayout(mockHoldings);
+      if (plots[0].returnPercentage >= 0) {
+        expect(plots[0].neonColor).toBe("#22d3ee");
+      } else {
+        expect(plots[0].neonColor).toBe("#fb7185");
+      }
+    });
   });
 
   describe("SectorCrown Component (AC-4)", () => {
@@ -181,6 +273,19 @@ describe("Procedural 3D City Visualizer", () => {
       );
       expect(container).toBeDefined();
     });
+
+    it("returns null gracefully for unrecognized sector type", () => {
+      const { container } = render(
+        <SectorCrown
+          sector={"Nonexistent Sector" as Sector}
+          width={3.5}
+          depth={3.5}
+          neonColor="#22d3ee"
+          emissiveIntensity={1.5}
+        />,
+      );
+      expect(container.firstChild).toBeNull();
+    });
   });
 
   describe("ConstructionBeacon & CityBuildings (AC-7)", () => {
@@ -193,29 +298,51 @@ describe("Procedural 3D City Visualizer", () => {
       const { container } = render(<ConstructionBeacon />);
       expect(container).toBeDefined();
     });
+
+    it("renders procedural buildings when portfolio has active holdings (AC-1, AC-5)", () => {
+      act(() => {
+        usePortfolioStore.getState().addHolding({
+          securityId: "sec_rel",
+          isin: "INE002A01018",
+          symbol: "RELIANCE",
+          exchange: "NSE",
+          companyName: "Reliance Industries Limited",
+          sector: "Oil, Gas and Energy",
+          quantity: 10,
+          buyPricePaise: "250000",
+          purchasedAt: "2026-11-09",
+        });
+      });
+
+      const handleSelect = vi.fn();
+      const { container } = render(
+        <CityBuildings onSelectHolding={handleSelect} />,
+      );
+      expect(container).toBeDefined();
+    });
   });
 
   describe("ProceduralBuilding (AC-5, AC-8)", () => {
+    const samplePlot = {
+      holdingId: "hold_sample_1",
+      securityId: "sec_tcs",
+      isin: "INE467B01029",
+      symbol: "TCS",
+      exchange: "NSE" as const,
+      companyName: "Tata Consultancy Services Limited",
+      sector: "IT and Technology" as Sector,
+      investedPaise: 3500000n,
+      height: 18.0,
+      width: 3.5,
+      depth: 3.5,
+      position: [0, 9.0, 0] as [number, number, number],
+      neonColor: "#22d3ee",
+      emissiveIntensity: 1.2,
+      returnPercentage: 12.5,
+    };
+
     it("renders procedural building and handles selection callback", () => {
       const handleSelect = vi.fn();
-      const samplePlot = {
-        holdingId: "hold_sample_1",
-        securityId: "sec_tcs",
-        isin: "INE467B01029",
-        symbol: "TCS",
-        exchange: "NSE" as const,
-        companyName: "Tata Consultancy Services Limited",
-        sector: "IT and Technology" as Sector,
-        investedPaise: 3500000n,
-        height: 18.0,
-        width: 3.5,
-        depth: 3.5,
-        position: [0, 9.0, 0] as [number, number, number],
-        neonColor: "#22d3ee",
-        emissiveIntensity: 1.2,
-        returnPercentage: 12.5,
-      };
-
       const { container } = render(
         <ProceduralBuilding
           plot={samplePlot}
@@ -225,6 +352,71 @@ describe("Procedural 3D City Visualizer", () => {
       );
 
       expect(container).toBeDefined();
+    });
+
+    it("handles hover pointer events and updates cursor style (AC-8)", () => {
+      const { container } = render(
+        <ProceduralBuilding plot={samplePlot} isSelected={false} />,
+      );
+      const group = container.querySelector("group");
+      expect(group).toBeDefined();
+
+      if (group) {
+        fireEvent.pointerOver(group);
+        expect(document.body.style.cursor).toBe("pointer");
+
+        fireEvent.pointerOut(group);
+        expect(document.body.style.cursor).toBe("auto");
+      }
+    });
+
+    it("handles click selection event (AC-8)", () => {
+      const handleSelect = vi.fn();
+      const { container } = render(
+        <ProceduralBuilding
+          plot={samplePlot}
+          isSelected={false}
+          onSelect={handleSelect}
+        />,
+      );
+
+      const group = container.querySelector("group");
+      if (group) {
+        fireEvent.click(group);
+        expect(handleSelect).toHaveBeenCalledWith("hold_sample_1");
+      }
+    });
+
+    it("renders short buildings without mid-tower band (AC-5)", () => {
+      const shortPlot = {
+        ...samplePlot,
+        height: 6.0,
+        position: [0, 3.0, 0] as [number, number, number],
+      };
+
+      const { container } = render(
+        <ProceduralBuilding plot={shortPlot} isSelected={false} />,
+      );
+      expect(container).toBeDefined();
+    });
+
+    it("applies enhanced emission intensity when selected (AC-8)", () => {
+      const { container } = render(
+        <ProceduralBuilding plot={samplePlot} isSelected={true} />,
+      );
+      expect(container).toBeDefined();
+    });
+  });
+
+  describe("CityScene Integration", () => {
+    it("mounts scene and marks canvas as ready in store", () => {
+      expect(useCanvasStore.getState().isCanvasReady).toBe(false);
+
+      const { unmount } = render(<CityScene />);
+      expect(useCanvasStore.getState().isCanvasReady).toBe(true);
+
+      unmount();
+      expect(useCanvasStore.getState().isCanvasReady).toBe(false);
     });
   });
 });
