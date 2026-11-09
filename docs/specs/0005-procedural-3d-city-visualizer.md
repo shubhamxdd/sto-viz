@@ -1,7 +1,7 @@
 # 0005. Procedural 3D City Visualizer
 
 **Date**: 2026-11-08
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -200,9 +200,22 @@ Ordered per the Skateboard build approach:
 
 ## Follow-up
 
-- [ ] Implement `src/presentation/components/canvas/city-layout.ts` layout and height math
-- [ ] Implement `src/presentation/components/canvas/sector-crowns.tsx` with 7 sector rooftop styles
-- [ ] Implement `src/presentation/components/canvas/procedural-building.tsx` with neon trims and pointer handlers
-- [ ] Implement `src/presentation/components/canvas/construction-beacon.tsx` for zero holding state
-- [ ] Integrate into `src/presentation/components/canvas/city-scene.tsx`
-- [ ] Write Vitest test suite covering city layout, scaling math, and building components
+- [x] Implement `src/presentation/components/canvas/city-layout.ts` layout and height math
+- [x] Implement `src/presentation/components/canvas/sector-crowns.tsx` with 7 sector rooftop styles
+- [x] Implement `src/presentation/components/canvas/procedural-building.tsx` with neon trims and pointer handlers
+- [x] Implement `src/presentation/components/canvas/construction-beacon.tsx` for zero holding state
+- [x] Integrate into `src/presentation/components/canvas/city-scene.tsx`
+- [x] Write Vitest test suite covering city layout, scaling math, and building components
+
+## Verification steps
+
+To verify the procedural 3D city visualizer:
+
+1. Run the development server with `npm run dev` and open `http://localhost:3000` in your browser.
+2. In the 3D viewport with an empty portfolio, verify that the central holographic construction beacon renders with pulsing cyan foundation lines and floating beacon marker (verifies AC-7).
+3. Open the Add Stock drawer and add 10 shares of Reliance Industries Limited at ₹2,500. Verify that a 3D building rises on the urban grid with industrial cooling towers on its rooftop (verifies AC-1, AC-4).
+4. Add 10 shares of TCS at ₹3,500. Verify that a second distinct skyscraper rises in an adjacent plot separated by street corridors, featuring communication spires and radar dishes (verifies AC-1, AC-4).
+5. Add 20 shares of HDFC Bank at ₹1,500. Verify that a third building appears with a stepped ziggurat neoclassical crown (verifies AC-1, AC-4).
+6. Verify that building heights reflect invested amounts logarithmically, with all buildings staying within 4 and 36 vertical units (verifies AC-2, AC-3).
+7. Inspect the building edges to verify glowing neon trims emitting electric cyan or magenta crimson based on return states (verifies AC-5, AC-6).
+8. Move the mouse cursor over any building. Verify that pointer interaction highlights the building with amplified neon emission (verifies AC-8).

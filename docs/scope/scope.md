@@ -16,7 +16,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 3 | Data model | Foundation | done |
 | 4 | Design system and 3D canvas | Foundation | done |
 | 5 | Manual portfolio entry | Release 1 | done |
-| 6 | Procedural 3D city visualizer | Release 1 | planned |
+| 6 | Procedural 3D city visualizer | Release 1 | in-progress |
 | 7 | City interaction and holding details | Release 1 | planned |
 | 8 | Curated demo cities | Release 1 | planned |
 | 9 | CSV holdings import | Release 2 | planned |
@@ -88,16 +88,16 @@ Searchable NSE and BSE stock catalog, manual entry of buy price and quantity, ed
 - [x] Test it: `/test manual portfolio entry`
 Spec [0004](../specs/0004-manual-portfolio-entry.md) · code in src/presentation/components/portfolio/
 
-### 6. Procedural 3D city visualizer · planned
+### 6. Procedural 3D city visualizer · in-progress
 Generate a cyberpunk skyline where building height scales with invested money, neon glow reflects profit or loss percentage, and building style reflects company sector.
 **Done when:** each holding renders as a distinct procedural 3D building matching its sector style, with height reflecting invested capital and neon shaders signaling profit or loss.
 - [x] Design it (spec): `/architect procedural 3D city visualizer`
-- [ ] Build it: `/develop procedural 3D city visualizer`
-  - [ ] City layout and logarithmic height scaling math (AC-1, AC-2, AC-3)
-  - [ ] Sector rooftop architectural crowns (AC-4)
-  - [ ] Procedural building component with neon trim shaders and hover interaction (AC-3, AC-5, AC-6, AC-8)
-  - [ ] Holographic construction beacon for empty portfolio state (AC-7)
-  - [ ] Canvas scene integration replacing static monolith (AC-1, AC-7)
+- [x] Build it: `/develop procedural 3D city visualizer`
+  - [x] City layout and logarithmic height scaling math (AC-1, AC-2, AC-3)
+  - [x] Sector rooftop architectural crowns (AC-4)
+  - [x] Procedural building component with neon trim shaders and hover interaction (AC-3, AC-5, AC-6, AC-8)
+  - [x] Holographic construction beacon for empty portfolio state (AC-7)
+  - [x] Canvas scene integration replacing static monolith (AC-1, AC-7)
 - [ ] Verify it: `/check verify procedural 3D city visualizer`
 - [ ] Test it: `/test procedural 3D city visualizer`
 Spec [0005](../specs/0005-procedural-3d-city-visualizer.md) · code in src/presentation/components/canvas/
