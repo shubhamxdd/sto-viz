@@ -17,7 +17,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 4 | Design system and 3D canvas | Foundation | done |
 | 5 | Manual portfolio entry | Release 1 | done |
 | 6 | Procedural 3D city visualizer | Release 1 | done |
-| 7 | City interaction and holding details | Release 1 | in-progress |
+| 7 | City interaction and holding details | Release 1 | done |
 | 8 | Curated demo cities | Release 1 | planned |
 | 9 | CSV holdings import | Release 2 | planned |
 | 10 | Accounts and cloud sync | Release 2 | planned |
@@ -102,7 +102,7 @@ Generate a cyberpunk skyline where building height scales with invested money, n
 - [x] Test it: `/test procedural 3D city visualizer`
 Spec [0005](../specs/0005-procedural-3d-city-visualizer.md) · code in src/presentation/components/canvas/
 
-### 7. City interaction and holding details · in-progress
+### 7. City interaction and holding details · done
 Building selection, detailed information panel, total portfolio summary, and a toggle between percentage only and rupee amounts.
 **Done when:** selecting a building displays its performance details, the total portfolio summary reflects current values, and the amount toggle switches between percentage only and rupee values.
 - [x] Design it (spec): `/architect city interaction and holding details`
@@ -114,8 +114,8 @@ Building selection, detailed information panel, total portfolio summary, and a t
   - [x] Canvas background deselection via onPointerMissed and store binding (AC-1, AC-8)
   - [x] Floating holding details card with metrics, allocation %, and actions (AC-3, AC-4, AC-5)
   - [x] Holdings list privacy masking and page layout integration (AC-3, AC-7)
-- [ ] Verify it: `/check verify city interaction and holding details`
-- [ ] Test it: `/test city interaction and holding details`
+- [x] Verify it: `/check verify city interaction and holding details`
+- [x] Test it: `/test city interaction and holding details`
 Spec [0006](../specs/0006-city-interaction-and-holding-details.md) · code in src/presentation/components/portfolio/ and src/presentation/components/canvas/
 
 ### 8. Curated demo cities
