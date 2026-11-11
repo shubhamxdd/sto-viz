@@ -18,7 +18,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 5 | Manual portfolio entry | Release 1 | done |
 | 6 | Procedural 3D city visualizer | Release 1 | done |
 | 7 | City interaction and holding details | Release 1 | done |
-| 8 | Curated demo cities | Release 1 | planned |
+| 8 | Curated demo cities | Release 1 | in-progress |
 | 9 | CSV holdings import | Release 2 | planned |
 | 10 | Accounts and cloud sync | Release 2 | planned |
 | 11 | Exchange Bhavcopy price pipeline | Release 3 | planned |
@@ -118,10 +118,19 @@ Building selection, detailed information panel, total portfolio summary, and a t
 - [x] Test it: `/test city interaction and holding details`
 Spec [0006](../specs/0006-city-interaction-and-holding-details.md) · code in src/presentation/components/portfolio/ and src/presentation/components/canvas/
 
-### 8. Curated demo cities
+### 8. Curated demo cities · in-progress
 Sample portfolios that let first time visitors explore the 3D city instantly without typing their own stocks.
 **Done when:** visitors can choose from sample portfolios on the empty city screen and immediately tour populated 3D cities.
+- [x] Design it (spec): `/architect curated demo cities`
 - [ ] Build it: `/develop curated demo cities`
+  - [ ] Securities catalog expansion and demo portfolio domain definitions (AC-4)
+  - [ ] Portfolio store atomic loadDemoPortfolio action and canvas coordination (AC-2, AC-3)
+  - [ ] Empty city overlay with curated sample cards and hydration gate (AC-1, AC-2)
+  - [ ] Demo cities selector dialog and overwrite confirmation modal (AC-3, AC-5)
+  - [ ] Holdings drawer explore and clear city actions (AC-5, AC-6)
+- [ ] Verify it: `/check verify curated demo cities`
+- [ ] Test it: `/test curated demo cities`
+Spec [0007](../specs/0007-curated-demo-cities.md) · code in src/domain/entities/ and src/presentation/components/portfolio/
 
 ## Release 2: Import and cloud sync
 
