@@ -10,6 +10,7 @@ import {
 } from "../../stores/use-portfolio-store";
 import { GlassCard } from "../ui/glass-card";
 import { DeleteHoldingDialog } from "./delete-holding-dialog";
+import { EmptyCityOverlay } from "./empty-city-overlay";
 
 interface HoldingsListProps {
   onNotify?: (message: string) => void;
@@ -64,19 +65,23 @@ export function HoldingsList({ onNotify }: HoldingsListProps) {
 
         {/* Holdings List */}
         {holdings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
-            <div className="h-10 w-10 rounded-full border border-slate-800 bg-slate-900/60 flex items-center justify-center text-slate-500">
-              <Plus className="h-5 w-5" />
+          <div className="flex flex-col py-2 space-y-4">
+            <div className="flex flex-col items-center justify-center pt-2 text-center space-y-2">
+              <div className="h-9 w-9 rounded-full border border-slate-800 bg-slate-900/60 flex items-center justify-center text-slate-500">
+                <Plus className="h-4 w-4" />
+              </div>
+              <div className="space-y-0.5">
+                <p className="font-mono text-xs text-slate-300">
+                  Your metropolis is empty
+                </p>
+                <p className="text-[11px] text-slate-500 max-w-[240px]">
+                  Add your Indian equity holdings to raise 3D cyberpunk towers
+                  in the city.
+                </p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="font-mono text-xs text-slate-300">
-                Your metropolis is empty
-              </p>
-              <p className="text-[11px] text-slate-500 max-w-[240px]">
-                Add your Indian equity holdings to raise 3D cyberpunk towers in
-                the city.
-              </p>
-            </div>
+
+            <EmptyCityOverlay onNotify={onNotify} />
           </div>
         ) : (
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">

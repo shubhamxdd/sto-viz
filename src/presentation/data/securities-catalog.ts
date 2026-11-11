@@ -155,6 +155,76 @@ export const SECURITIES_CATALOG: CatalogSecurity[] = [
       { exchange: "BSE", symbol: "500087", isPrimary: false },
     ],
   },
+  {
+    id: "sec_techm",
+    isin: "INE669C01036",
+    companyName: "Tech Mahindra Limited",
+    sector: "IT and Technology",
+    listings: [
+      { exchange: "NSE", symbol: "TECHM", isPrimary: true },
+      { exchange: "BSE", symbol: "532755", isPrimary: false },
+    ],
+  },
+  {
+    id: "sec_ltts",
+    isin: "INE214T01019",
+    companyName: "L&T Technology Services Limited",
+    sector: "IT and Technology",
+    listings: [
+      { exchange: "NSE", symbol: "LTTS", isPrimary: true },
+      { exchange: "BSE", symbol: "540115", isPrimary: false },
+    ],
+  },
+  {
+    id: "sec_zomato",
+    isin: "INE758T01015",
+    companyName: "Zomato Limited",
+    sector: "IT and Technology",
+    listings: [
+      { exchange: "NSE", symbol: "ZOMATO", isPrimary: true },
+      { exchange: "BSE", symbol: "543320", isPrimary: false },
+    ],
+  },
+  {
+    id: "sec_tatapower",
+    isin: "INE245A01021",
+    companyName: "Tata Power Company Limited",
+    sector: "Oil, Gas and Energy",
+    listings: [
+      { exchange: "NSE", symbol: "TATAPOWER", isPrimary: true },
+      { exchange: "BSE", symbol: "500400", isPrimary: false },
+    ],
+  },
+  {
+    id: "sec_adanigreen",
+    isin: "INE364U01010",
+    companyName: "Adani Green Energy Limited",
+    sector: "Oil, Gas and Energy",
+    listings: [
+      { exchange: "NSE", symbol: "ADANIGREEN", isPrimary: true },
+      { exchange: "BSE", symbol: "541450", isPrimary: false },
+    ],
+  },
+  {
+    id: "sec_ntpc",
+    isin: "INE733E01010",
+    companyName: "NTPC Limited",
+    sector: "Oil, Gas and Energy",
+    listings: [
+      { exchange: "NSE", symbol: "NTPC", isPrimary: true },
+      { exchange: "BSE", symbol: "532555", isPrimary: false },
+    ],
+  },
+  {
+    id: "sec_suzlon",
+    isin: "INE040H01021",
+    companyName: "Suzlon Energy Limited",
+    sector: "Automobiles and Manufacturing",
+    listings: [
+      { exchange: "NSE", symbol: "SUZLON", isPrimary: true },
+      { exchange: "BSE", symbol: "532667", isPrimary: false },
+    ],
+  },
 ];
 
 /**

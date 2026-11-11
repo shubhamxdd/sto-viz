@@ -102,4 +102,14 @@ describe("HomePage Component", () => {
     expect(screen.getByText("Portfolio Weight: 100.0%")).toBeDefined();
     expect(screen.getByRole("button", { name: /edit holding/i })).toBeDefined();
   });
+
+  // covers: AC-1 (HomePage renders curated demo city options when portfolio is empty)
+  it("renders curated demo city options on HomePage when portfolio is empty", () => {
+    render(<HomePage />);
+
+    expect(screen.getByText("Or Tour a Curated Demo City")).toBeDefined();
+    expect(screen.getByText("Nifty Titans")).toBeDefined();
+    expect(screen.getByText("Tech Frontier")).toBeDefined();
+    expect(screen.getByText("Green Horizon")).toBeDefined();
+  });
 });

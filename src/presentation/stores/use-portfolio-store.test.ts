@@ -192,4 +192,57 @@ describe("usePortfolioStore", () => {
     expect(state.getTotalQuantity()).toBe(0);
     expect(state.getSectorBreakdown()).toEqual([]);
   });
+
+  // covers: AC-2, AC-3 (loading demo portfolios and resetting on clear)
+  it("loads curated demo portfolio and replaces current holdings", () => {
+    act(() => {
+      usePortfolioStore.getState().addHolding({
+        securityId: "sec_reliance",
+        isin: "INE002A01018",
+        symbol: "RELIANCE",
+        exchange: "NSE",
+        companyName: "Reliance Industries Limited",
+        sector: "Oil, Gas and Energy",
+        quantity: 1,
+        buyPricePaise: "200000",
+      });
+    });
+
+    expect(usePortfolioStore.getState().holdings).toHaveLength(1);
+
+    act(() => {
+      const ok = usePortfolioStore
+        .getState()
+        .loadDemoPortfolio("tech-frontier");
+      expect(ok).toBe(true);
+    });
+
+    const state = usePortfolioStore.getState();
+    expect(state.activeDemoId).toBe("tech-frontier");
+    expect(state.holdings).toHaveLength(5);
+    expect(state.holdings.map((h) => h.symbol)).toEqual([
+      "TCS",
+      "INFY",
+      "TECHM",
+      "LTTS",
+      "ZOMATO",
+    ]);
+
+    act(() => {
+      usePortfolioStore.getState().clearHoldings();
+    });
+
+    const clearedState = usePortfolioStore.getState();
+    expect(clearedState.holdings).toHaveLength(0);
+    expect(clearedState.activeDemoId).toBeNull();
+  });
+
+  it("returns false when loading an invalid demo ID", () => {
+    act(() => {
+      const ok = usePortfolioStore
+        .getState()
+        .loadDemoPortfolio("invalid-demo-id");
+      expect(ok).toBe(false);
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { getDemoPortfolioById } from "@/domain/entities/demo-portfolio";
 import type { Sector } from "@/domain/entities/security";
 
 export interface PortfolioHolding {
@@ -31,12 +32,14 @@ export interface CreateHoldingInput {
 
 export interface PortfolioState {
   holdings: PortfolioHolding[];
+  activeDemoId: string | null;
   isDrawerOpen: boolean;
   editingHoldingId: string | null;
 
   // Actions
   openDrawer: (holdingId?: string | null) => void;
   closeDrawer: () => void;
+  loadDemoPortfolio: (demoId: string) => boolean;
   addHolding: (input: CreateHoldingInput) => {
     isMerged: boolean;
     holding: PortfolioHolding;
@@ -71,6 +74,7 @@ export const usePortfolioStore = create<PortfolioState>()(
   persist(
     (set, get) => ({
       holdings: [],
+      activeDemoId: null,
       isDrawerOpen: false,
       editingHoldingId: null,
 
@@ -80,6 +84,39 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       closeDrawer: () => {
         set({ isDrawerOpen: false, editingHoldingId: null });
+      },
+
+      loadDemoPortfolio: (demoId) => {
+        const demo = getDemoPortfolioById(demoId);
+        if (!demo) return false;
+
+        const nowIso = new Date().toISOString();
+        const demoHoldings: PortfolioHolding[] = demo.holdings.map((h, idx) => {
+          const buyPrice = BigInt(h.buyPricePaise);
+          const totalCost = BigInt(h.quantity) * buyPrice;
+          return {
+            id: `demo_${demo.id}_${h.symbol.toLowerCase()}_${idx}`,
+            securityId: h.securityId,
+            isin: h.isin,
+            symbol: h.symbol,
+            exchange: h.exchange,
+            companyName: h.companyName,
+            sector: h.sector,
+            quantity: h.quantity,
+            buyPricePaise: buyPrice.toString(),
+            totalCostPaise: totalCost.toString(),
+            purchasedAt: h.purchasedAt,
+            updatedAt: nowIso,
+          };
+        });
+
+        set({
+          holdings: demoHoldings,
+          activeDemoId: demo.id,
+          isDrawerOpen: false,
+          editingHoldingId: null,
+        });
+        return true;
       },
 
       addHolding: (input) => {
@@ -179,7 +216,12 @@ export const usePortfolioStore = create<PortfolioState>()(
       },
 
       clearHoldings: () => {
-        set({ holdings: [] });
+        set({
+          holdings: [],
+          activeDemoId: null,
+          isDrawerOpen: false,
+          editingHoldingId: null,
+        });
       },
 
       getTotalInvestedPaise: () => {
@@ -228,6 +270,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       partialize: (state) =>
         ({
           holdings: state.holdings,
+          activeDemoId: state.activeDemoId,
         }) as PortfolioState,
     },
   ),

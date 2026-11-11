@@ -1,3 +1,4 @@
+export * from "./entities/demo-portfolio";
 export * from "./entities/holding";
 export * from "./entities/portfolio";
 export * from "./entities/security";

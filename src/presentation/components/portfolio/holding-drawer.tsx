@@ -1,17 +1,19 @@
 "use client";
 
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, Sparkles, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatPaiseToRupees } from "@/domain/services/currency-parser";
 import {
   type CatalogSecurity,
   SECURITIES_CATALOG,
 } from "../../data/securities-catalog";
+import { useCanvasStore } from "../../stores/use-canvas-store";
 import {
   type CreateHoldingInput,
   usePortfolioStore,
 } from "../../stores/use-portfolio-store";
 import { CurrencyInput } from "../ui/currency-input";
+import { DemoCitiesDialog } from "./demo-cities-dialog";
 import { StockSearchInput } from "./stock-search-input";
 
 interface HoldingDrawerProps {
@@ -25,6 +27,7 @@ export function HoldingDrawer({ onNotify }: HoldingDrawerProps) {
   const closeDrawer = usePortfolioStore((state) => state.closeDrawer);
   const addHolding = usePortfolioStore((state) => state.addHolding);
   const updateHolding = usePortfolioStore((state) => state.updateHolding);
+  const clearHoldings = usePortfolioStore((state) => state.clearHoldings);
 
   const editingHolding = editingHoldingId
     ? holdings.find((h) => h.id === editingHoldingId)
@@ -40,6 +43,19 @@ export function HoldingDrawer({ onNotify }: HoldingDrawerProps) {
   const [buyPricePaise, setBuyPricePaise] = useState<bigint>(0n);
   const [purchasedAt, setPurchasedAt] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Dialog states for demo explore and clear city
+  const [isDemoDialogOpen, setIsDemoDialogOpen] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+
+  const handleClearConfirm = () => {
+    clearHoldings();
+    useCanvasStore.getState().setSelectedHoldingId(null, null);
+    useCanvasStore.getState().triggerCameraReset();
+    setIsClearConfirmOpen(false);
+    closeDrawer();
+    onNotify?.("Cleared all portfolio holdings");
+  };
 
   // Synchronize form when editing holding changes or drawer opens
   useEffect(() => {
@@ -275,8 +291,93 @@ export function HoldingDrawer({ onNotify }: HoldingDrawerProps) {
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
+
+          {/* Quick Utilities: Explore Demo Cities & Clear City */}
+          <div className="border-t border-slate-800/80 pt-4 mt-2 space-y-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsDemoDialogOpen(true)}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 py-2 px-3 font-mono text-xs font-semibold text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 hover:bg-slate-900 transition-colors cursor-pointer"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                <span>Explore Demo Cities</span>
+              </button>
+
+              {holdings.length > 0 && !editingHolding && (
+                <button
+                  type="button"
+                  onClick={() => setIsClearConfirmOpen(true)}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-rose-900/40 bg-rose-950/20 py-2 px-3 font-mono text-xs font-semibold text-rose-400 hover:bg-rose-950/40 hover:border-rose-500/50 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Clear City</span>
+                </button>
+              )}
+            </div>
+          </div>
         </form>
       </div>
+
+      {/* Demo Cities Selector Dialog */}
+      <DemoCitiesDialog
+        isOpen={isDemoDialogOpen}
+        onClose={() => setIsDemoDialogOpen(false)}
+        onNotify={onNotify}
+      />
+
+      {/* Clear City Confirmation Modal */}
+      {isClearConfirmOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clear-dialog-title"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150"
+        >
+          <div className="relative w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-950/95 p-5 shadow-2xl backdrop-blur-xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-500/10">
+                <Trash2 className="h-5 w-5 text-rose-400" />
+              </div>
+              <div>
+                <h3
+                  id="clear-dialog-title"
+                  className="font-mono text-sm font-bold text-white"
+                >
+                  Clear Entire Metropolis?
+                </h3>
+                <p className="font-mono text-xs text-slate-400">
+                  Wipe all {holdings.length}{" "}
+                  {holdings.length === 1 ? "holding" : "holdings"}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              This will remove all stock holdings from your portfolio and reset
+              the visualizer to an empty construction foundation. This action
+              cannot be undone.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsClearConfirmOpen(false)}
+                className="rounded-lg border border-slate-800 bg-slate-900/60 px-3.5 py-1.5 font-mono text-xs font-semibold text-slate-300 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleClearConfirm}
+                className="rounded-lg bg-rose-600 px-3.5 py-1.5 font-mono text-xs font-semibold text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-600/20 cursor-pointer"
+              >
+                Clear All Holdings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

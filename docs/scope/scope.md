@@ -122,12 +122,12 @@ Spec [0006](../specs/0006-city-interaction-and-holding-details.md) · code in sr
 Sample portfolios that let first time visitors explore the 3D city instantly without typing their own stocks.
 **Done when:** visitors can choose from sample portfolios on the empty city screen and immediately tour populated 3D cities.
 - [x] Design it (spec): `/architect curated demo cities`
-- [ ] Build it: `/develop curated demo cities`
-  - [ ] Securities catalog expansion and demo portfolio domain definitions (AC-4)
-  - [ ] Portfolio store atomic loadDemoPortfolio action and canvas coordination (AC-2, AC-3)
-  - [ ] Empty city overlay with curated sample cards and hydration gate (AC-1, AC-2)
-  - [ ] Demo cities selector dialog and overwrite confirmation modal (AC-3, AC-5)
-  - [ ] Holdings drawer explore and clear city actions (AC-5, AC-6)
+- [x] Build it: `/develop curated demo cities`
+  - [x] Securities catalog expansion and demo portfolio domain definitions (AC-4)
+  - [x] Portfolio store atomic loadDemoPortfolio action and canvas coordination (AC-2, AC-3)
+  - [x] Empty city overlay with curated sample cards and hydration gate (AC-1, AC-2)
+  - [x] Demo cities selector dialog and overwrite confirmation modal (AC-3, AC-5)
+  - [x] Holdings drawer explore and clear city actions (AC-5, AC-6)
 - [ ] Verify it: `/check verify curated demo cities`
 - [ ] Test it: `/test curated demo cities`
 Spec [0007](../specs/0007-curated-demo-cities.md) · code in src/domain/entities/ and src/presentation/components/portfolio/
